@@ -6,14 +6,14 @@ import urllib.parse
 # Configuración inicial de la página
 st.set_page_config(page_title="Caja Taller Automotriz", page_icon="🚗", layout="centered")
 
-# Estilos CSS optimizados para velocidad y tarjetas limpias
+# Estilos CSS
 st.markdown("""
     <style>
     .card-ingreso { background-color: #dcfce7; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #22c55e; margin-bottom: 8px; color: #166534; }
     .card-taller { background-color: #fee2e2; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #ef4444; margin-bottom: 8px; color: #991b1b; }
     .card-personal { background-color: #fef3c7; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #f59e0b; margin-bottom: 8px; color: #92400e; }
     .metric-container { background-color: #1e293b; padding: 15px; border-radius: 15px; color: white; text-align: center; }
-    .btn-whatsapp { display: inline-block; background-color: #25d366; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; text-align: center; width: 100%; margin-top: 10px; }
+    .btn-whatsapp { display: block; background-color: #25d366; color: white; padding: 12px 20px; border-radius: 10px; text-decoration: none; font-weight: bold; text-align: center; width: 100%; margin-top: 15px; font-size: 1rem; }
     .btn-whatsapp:hover { background-color: #22bf5b; color: white; }
     </style>
 """, unsafe_allow_html=True)
@@ -182,9 +182,9 @@ if not df.empty:
         """, unsafe_allow_html=True)
 
     st.write("---")
-    st.subheader("🖨️ Reportes y Enviar a WhatsApp")
+    st.subheader("🖨️ Reportes y Cierre de Día")
 
-    # Botones de Reporte en Cuadro y WhatsApp
+    # Botones de Reporte en Cuadro
     col_btn1, col_btn2 = st.columns(2)
     
     with col_btn1:
@@ -205,33 +205,37 @@ if not df.empty:
             else:
                 st.info("No hay movimientos registrados este mes.")
 
-    # --- BOTÓN DE WHATSAPP PARA EL CIERRE DEL DÍA ---
-    st.write("")
-    df_hoy_wa = df[df['fecha'] == fecha_hoy]
-    if not df_hoy_wa.empty:
-        # Construir mensaje ordenado para WhatsApp
-        msg = f"🚗 *REPORTE DIARIO - TALLER CÉSAR BETO*\n"
-        msg += f"📅 *Fecha:* {fecha_hoy}\n\n"
-        msg += f"🟢 *Ingresos del día:* ${f_ingresos:.2f}\n"
-        msg += f"🔴 *Gastos del día:* ${f_gastos:.2f}\n"
-        msg += f"💵 *Dinero Libre Actual:* ${saldo_libre:.2f}\n\n"
-        msg += f"📋 *Detalle de operaciones:*\n"
-        
-        for index, row in df_hoy_wa.iterrows():
-            signo = "+" if "Ingresos" in row['tipo'] else "-"
-            msg += f"• {row['detalle']}: {signo}${row['monto']:.2f}\n"
-        
-        # Codificar el texto para la URL de WhatsApp
-        mensaje_codificado = urllib.parse.quote(msg)
-        url_whatsapp = f"https://api.whatsapp.com/send?text={mensaje_codificado}"
-        
-        st.markdown(f'''
-            <a href="{url_whatsapp}" target="_blank" class="btn-whatsapp">
-                💬 Enviar Resumen de Hoy a WhatsApp
-            </a>
-        ''', unsafe_allow_html=True)
-    else:
-        st.info("💡 Registra al menos un movimiento hoy para habilitar el botón de WhatsApp.")
-
 else:
     st.info("No hay registros todavía. Empieza agregando tus operaciones arriba.")
+
+# --- SECCIÓN FIJA DE WHATSAPP (SIEMPRE VISIBLE AL FINAL) ---
+st.write("---")
+st.subheader("💬 Envío de Cierre a WhatsApp")
+
+df_hoy_wa = df[df['fecha'] == fecha_hoy] if not df.empty else pd.DataFrame()
+
+if not df_hoy_wa.empty:
+    f_ing_hoy = df_hoy_wa[df_hoy_wa['tipo'].str.contains("Ingresos")]['monto'].sum()
+    f_gas_hoy = df_hoy_wa[df_hoy_wa['tipo'].str.contains("Gastos|Materiales", regex=True)]['monto'].sum()
+    
+    msg = f"🚗 *REPORTE DIARIO - TALLER CÉSAR BETO*\n"
+    msg += f"📅 *Fecha:* {fecha_hoy}\n\n"
+    msg += f"🟢 *Ingresos del día:* ${f_ing_hoy:.2f}\n"
+    msg += f"🔴 *Gastos del día:* ${f_gas_hoy:.2f}\n"
+    msg += f"💵 *Dinero Libre Actual:* ${saldo_libre:.2f}\n\n"
+    msg += f"📋 *Detalle de operaciones:*\n"
+    
+    for index, row in df_hoy_wa.iterrows():
+        signo = "+" if "Ingresos" in row['tipo'] else "-"
+        msg += f"• {row['detalle']}: {signo}${row['monto']:.2f}\n"
+    
+    mensaje_codificado = urllib.parse.quote(msg)
+    url_whatsapp = f"https://api.whatsapp.com/send?text={mensaje_codificado}"
+    
+    st.markdown(f'''
+        <a href="{url_whatsapp}" target="_blank" class="btn-whatsapp">
+            💬 Enviar Resumen de Hoy a WhatsApp
+        </a>
+    ''', unsafe_allow_html=True)
+else:
+    st.info("💡 Registra al menos un ingreso o gasto el día de hoy para habilitar el botón de envío automático a WhatsApp.")
