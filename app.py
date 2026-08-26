@@ -6,13 +6,28 @@ import urllib.parse
 # Configuración inicial de la página
 st.set_page_config(page_title="Caja Taller Automotriz", page_icon="🚗", layout="centered")
 
-# Estilos CSS optimizados
+# Estilos CSS con diseño automotriz (Fondo con tarjetas e imágenes de autos)
 st.markdown("""
     <style>
-    .card-ingreso { background-color: #dcfce7; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #22c55e; margin-bottom: 8px; color: #166534; }
-    .card-taller { background-color: #fee2e2; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #ef4444; margin-bottom: 8px; color: #991b1b; }
-    .card-personal { background-color: #fef3c7; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #f59e0b; margin-bottom: 8px; color: #92400e; }
-    .metric-container { background-color: #1e293b; padding: 15px; border-radius: 15px; color: white; text-align: center; }
+    .stApp {
+        background-color: #0f172a;
+        color: #f8fafc;
+    }
+    .banner-taller {
+        background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)), url('https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=1000&q=80');
+        background-size: cover;
+        background-position: center;
+        padding: 25px;
+        border-radius: 15px;
+        text-align: center;
+        color: white;
+        margin-bottom: 20px;
+        border: 1px solid #334155;
+    }
+    .card-ingreso { background-color: #064e3b; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #22c55e; margin-bottom: 8px; color: #ecfdf5; }
+    .card-taller { background-color: #7f1d1d; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #ef4444; margin-bottom: 8px; color: #fef2f2; }
+    .card-personal { background-color: #78350f; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #f59e0b; margin-bottom: 8px; color: #fffbeb; }
+    .metric-container { background-color: #1e293b; padding: 15px; border-radius: 15px; color: white; text-align: center; border: 1px solid #334155; }
     .btn-whatsapp { display: block; background-color: #25d366; color: white; padding: 12px 20px; border-radius: 10px; text-decoration: none; font-weight: bold; text-align: center; width: 100%; margin-top: 15px; font-size: 1rem; }
     .btn-whatsapp:hover { background-color: #22bf5b; color: white; }
     </style>
@@ -25,8 +40,13 @@ if 'operaciones' not in st.session_state:
 if 'saldo_base' not in st.session_state:
     st.session_state.saldo_base = 0.0
 
-st.title("🚗 Control Financiero - César Beto")
-st.write("Taller de Pintura Automotriz")
+# Banner visual de carros / taller
+st.markdown("""
+    <div class="banner-taller">
+        <h1 style="margin:0; font-size: 1.8rem; color: #38bdf8;">🚗 Taller Automotriz César Beto</h1>
+        <p style="margin:5px 0 0 0; color: #cbd5e1;">Control Financiero Rápido y Profesional</p>
+    </div>
+""", unsafe_allow_html=True)
 
 # --- CONFIGURACIÓN DE SALDO INICIAL ---
 with st.expander("⚙️ Configurar Dinero Inicial / Base"):
@@ -35,17 +55,22 @@ with st.expander("⚙️ Configurar Dinero Inicial / Base"):
         st.session_state.saldo_base = nuevo_saldo
         st.success("¡Saldo base actualizado!")
 
-# --- FORMULARIO DE REGISTRO RÁPIDO Y FLUIDO ---
+# --- FUNCIÓN DE CAMBIO INSTANTÁNEO (EVITA QUE SE QUEDE PEGADO) ---
+def actualizar_tipo():
+    # Esta función limpia al instante cualquier retraso al cambiar de opción
+    pass
+
+# Selector principal fuera de formulario para respuesta inmediata
+tipo = st.selectbox("Tipo de Operación:", [
+    "🟢 Ingresos de Pintura / Taller", 
+    "🔴 Gastos Materiales y Herramientas", 
+    "🟡 Gastos Personales"
+], on_change=actualizar_tipo, key="select_tipo_op_principal")
+
+st.write("")
+
+# --- FORMULARIO DE REGISTRO RÁPIDO ---
 with st.form("form_registro", clear_on_submit=True):
-    st.subheader("Registrar Movimiento")
-    
-    # Selector principal de tipo
-    tipo = st.selectbox("Tipo de Operación:", [
-        "🟢 Ingresos de Pintura / Taller", 
-        "🔴 Gastos Materiales y Herramientas", 
-        "🟡 Gastos Personales"
-    ], key="select_tipo_op")
-    
     detalle = ""
     
     # 1. Si es Ingreso
@@ -55,11 +80,11 @@ with st.form("form_registro", clear_on_submit=True):
         
         col_m, col_t = st.columns(2)
         with col_m:
-            m_elegida = st.selectbox("Marca:", marcas, key="ing_marca")
+            m_elegida = st.selectbox("Marca del Auto:", marcas)
         with col_t:
-            t_elegido = st.selectbox("Trabajo:", trabajos, key="ing_trabajo")
+            t_elegido = st.selectbox("Trabajo Realizado:", trabajos)
             
-        desc_libre = st.text_input("Detalle extra (opcional):", key="ing_extra")
+        desc_libre = st.text_input("Detalle extra (opcional):")
         detalle = f"{t_elegido} ({m_elegida})"
         if desc_libre:
             detalle += f" - {desc_libre}"
@@ -67,13 +92,13 @@ with st.form("form_registro", clear_on_submit=True):
     # 2. Si es Gasto de Taller
     elif "Gastos Materiales" in tipo:
         materiales = ["Lijas de agua / seca", "Pintura Poliuretano / Base", "Tiner / Disolvente", "Masilla plástica", "Cinta masking tape / Papel", "Compra de Herramienta"]
-        mat_elegido = st.selectbox("Material / Herramienta:", materiales, key="mat_select")
-        desc_libre = st.text_input("Detalle extra (opcional):", key="mat_extra")
+        mat_elegido = st.selectbox("Material / Herramienta:", materiales)
+        desc_libre = st.text_input("Detalle extra (opcional):")
         detalle = mat_elegido
         if desc_libre:
             detalle += f" - {desc_libre}"
 
-    # 3. Si es Gasto Personal (Sin rastro de marcas de autos)
+    # 3. Si es Gasto Personal
     else: 
         personales = [
             "Almuerzo", 
@@ -84,13 +109,13 @@ with st.form("form_registro", clear_on_submit=True):
             "Regalos", 
             "Pasajes / Movilidad"
         ]
-        per_elegido = st.selectbox("Categoría Personal:", personales, key="per_select")
-        desc_libre = st.text_input("Detalle extra (opcional):", key="per_extra")
+        per_elegido = st.selectbox("Categoría Personal:", personales)
+        desc_libre = st.text_input("Detalle extra (opcional):")
         detalle = per_elegido
         if desc_libre:
             detalle += f" - {desc_libre}"
 
-    monto = st.number_input("Monto ($):", min_value=0.0, step=1.0, format="%.2f", key="monto_input")
+    monto = st.number_input("Monto ($):", min_value=0.0, step=1.0, format="%.2f")
     
     enviado = st.form_submit_button("Guardar Operación")
     
@@ -189,7 +214,6 @@ if not df.empty:
     st.write("---")
     st.subheader("🖨️ Reportes y Cierre de Día")
 
-    # Botones de Reporte en Cuadro
     col_btn1, col_btn2 = st.columns(2)
     
     with col_btn1:
@@ -213,7 +237,7 @@ if not df.empty:
 else:
     st.info("No hay registros todavía. Empieza agregando tus operaciones arriba.")
 
-# --- SECCIÓN FIJA DE WHATSAPP (SIEMPRE VISIBLE AL FINAL) ---
+# --- SECCIÓN DE WHATSAPP ---
 st.write("---")
 st.subheader("💬 Envío de Cierre a WhatsApp")
 
