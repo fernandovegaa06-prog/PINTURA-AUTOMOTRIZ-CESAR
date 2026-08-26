@@ -1,21 +1,24 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import urllib.parse
 
 # Configuración inicial de la página
 st.set_page_config(page_title="Caja Taller Automotriz", page_icon="🚗", layout="centered")
 
-# Estilos CSS personalizados para darle un look moderno de tarjetas (cuadros)
+# Estilos CSS optimizados para velocidad y tarjetas limpias
 st.markdown("""
     <style>
-    .card-ingreso { background-color: #dcfce7; padding: 12px; border-radius: 10px; border-left: 5px solid #22c55e; margin-bottom: 8px; color: #166534; }
-    .card-taller { background-color: #fee2e2; padding: 12px; border-radius: 10px; border-left: 5px solid #ef4444; margin-bottom: 8px; color: #991b1b; }
-    .card-personal { background-color: #fef3c7; padding: 12px; border-radius: 10px; border-left: 5px solid #f59e0b; margin-bottom: 8px; color: #92400e; }
+    .card-ingreso { background-color: #dcfce7; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #22c55e; margin-bottom: 8px; color: #166534; }
+    .card-taller { background-color: #fee2e2; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #ef4444; margin-bottom: 8px; color: #991b1b; }
+    .card-personal { background-color: #fef3c7; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #f59e0b; margin-bottom: 8px; color: #92400e; }
     .metric-container { background-color: #1e293b; padding: 15px; border-radius: 15px; color: white; text-align: center; }
+    .btn-whatsapp { display: inline-block; background-color: #25d366; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; text-align: center; width: 100%; margin-top: 10px; }
+    .btn-whatsapp:hover { background-color: #22bf5b; color: white; }
     </style>
 """, unsafe_allow_html=True)
 
-# Inicializar Base de Datos en la sesión de Streamlit
+# Inicializar Base de Datos en la sesión
 if 'operaciones' not in st.session_state:
     st.session_state.operaciones = []
 
@@ -32,60 +35,63 @@ with st.expander("⚙️ Configurar Dinero Inicial / Base"):
         st.session_state.saldo_base = nuevo_saldo
         st.success("¡Saldo base actualizado!")
 
-# --- FORMULARIO DE REGISTRO ---
+# --- FORMULARIO DE REGISTRO RÁPIDO ---
 with st.form("form_registro", clear_on_submit=True):
     st.subheader("Registrar Movimiento")
     
     tipo = st.selectbox("Tipo de Operación:", [
         "🟢 Ingresos de Pintura / Taller", 
         "🔴 Gastos Materiales y Herramientas", 
-        "🟡 Gastos Personales del Día"
+        "🟡 Gastos Personales"
     ])
     
-    # Listas automáticas para el rubro automotriz
     detalle = ""
     if "Ingresos" in tipo:
-        marcas = ["Toyota", "Hyundai", "Nissan", "Chevrolet", "Kia", "Suzuki", "Mazda", "Volkswagen"]
+        marcas = ["Toyota", "Hyundai", "Nissan", "Chevrolet", "Kia", "Suzuki", "Mazda", "Volkswagen", "Otro"]
         trabajos = ["Pintado Parachoques Delantero", "Pintado Parachoques Trasero", "Pintado de Puerta", "Pintado Capot / Tapa", "Pintura Completa Auto", "Adelanto de Trabajo"]
         
         col_m, col_t = st.columns(2)
         with col_m:
-            m_elegida = st.selectbox("Marca de Auto:", ["Seleccionar marca..."] + marcas)
+            m_elegida = st.selectbox("Marca:", marcas)
         with col_t:
-            t_elegido = st.selectbox("Trabajo Realizado:", ["Seleccionar trabajo..."] + trabajos)
+            t_elegido = st.selectbox("Trabajo:", trabajos)
             
-        desc_personalizada = st.text_input("O escribe otro detalle personalizado:")
-        
-        # Armar descripción final
-        partes = []
-        if t_elegido != "Seleccionar trabajo...": partes.append(t_elegido)
-        if m_elegida != "Seleccionar marca...": partes.append(f"({m_elegida})")
-        if desc_personalizada: partes.append(desc_personalizada)
-        detalle = " - ".join(partes)
+        desc_libre = st.text_input("Detalle extra (opcional):")
+        detalle = f"{t_elegido} ({m_elegida})"
+        if desc_libre:
+            detalle += f" - {desc_libre}"
 
     elif "Gastos Materiales" in tipo:
         materiales = ["Lijas de agua / seca", "Pintura Poliuretano / Base", "Tiner / Disolvente", "Masilla plástica", "Cinta masking tape / Papel", "Compra de Herramienta"]
-        mat_elegido = st.selectbox("Material / Herramienta Rápida:", ["Seleccionar material..."] + materiales)
-        desc_personalizada = st.text_input("O escribe otro detalle:")
-        detalle = mat_elegido if mat_elegido != "Seleccionar material..." else desc_personalizada
-        if mat_elegido != "Seleccionar material..." and desc_personalizada:
-            detalle = f"{mat_elegido} - {desc_personalizada}"
+        mat_elegido = st.selectbox("Material / Herramienta:", materiales)
+        desc_libre = st.text_input("Detalle extra (opcional):")
+        detalle = mat_elegido
+        if desc_libre:
+            detalle += f" - {desc_libre}"
 
-    else: # Gasto Personal
-        personales = ["Desayuno", "Almuerzo", "Cena", "Pasajes / Movilidad", "Una Chela / Ocio"]
-        per_elegido = st.selectbox("Gasto Personal Rápido:", ["Seleccionar gasto..."] + personales)
-        desc_personalizada = st.text_input("O escribe otro detalle personal:")
-        detalle = per_elegido if per_elegido != "Seleccionar gasto..." else desc_personalizada
-        if per_elegido != "Seleccionar gasto..." and desc_personalizada:
-            detalle = f"{per_elegido} - {desc_personalizada}"
+    else: 
+        personales = [
+            "Almuerzo", 
+            "Desayuno", 
+            "Cena", 
+            "Bebidas / Cerveza", 
+            "Ropa", 
+            "Regalos", 
+            "Pasajes / Movilidad"
+        ]
+        per_elegido = st.selectbox("Categoría Personal:", personales)
+        desc_libre = st.text_input("Detalle extra (opcional):")
+        detalle = per_elegido
+        if desc_libre:
+            detalle += f" - {desc_libre}"
 
     monto = st.number_input("Monto ($):", min_value=0.0, step=1.0, format="%.2f")
     
     enviado = st.form_submit_button("Guardar Operación")
     
     if enviado:
-        if not detalle or monto <= 0:
-            st.error("Por favor completa el detalle y un monto válido mayor a 0.")
+        if monto <= 0:
+            st.error("Por favor ingresa un monto válido mayor a 0.")
         else:
             now = datetime.now()
             nueva_op = {
@@ -96,78 +102,77 @@ with st.form("form_registro", clear_on_submit=True):
                 "mes_anio": now.strftime("%m/%Y")
             }
             st.session_state.operaciones.insert(0, nueva_op)
-            st.success("¡Guardado correctamente!")
+            st.success("¡Guardado con éxito!")
             st.rerun()
 
-# --- PROCESAMIENTO DE DATOS Y CALCULOS ---
+# --- PROCESAMIENTO GENERAL ---
 df = pd.DataFrame(st.session_state.operaciones)
 
-total_ingresos_global = 0.0
-total_gasto_taller_global = 0.0
-total_gasto_personal_global = 0.0
+total_ing_g = 0.0
+total_gt_g = 0.0
+total_gp_g = 0.0
 
 if not df.empty:
-    total_ingresos_global = df[df['tipo'].str.contains("Ingresos")]['monto'].sum()
-    total_gasto_taller_global = df[df['tipo'].str.contains("Materiales")]['monto'].sum()
-    total_gasto_personal_global = df[df['tipo'].str.contains("Personales")]['monto'].sum()
+    total_ing_g = df[df['tipo'].str.contains("Ingresos")]['monto'].sum()
+    total_gt_g = df[df['tipo'].str.contains("Materiales")]['monto'].sum()
+    total_gp_g = df[df['tipo'].str.contains("Gastos Personales")]['monto'].sum()
 
-saldo_actual_libre = st.session_state.saldo_base + total_ingresos_global - total_gasto_taller_global - total_gasto_personal_global
+saldo_libre = st.session_state.saldo_base + total_ing_g - total_gt_g - total_gp_g
 
-# Mostrar Saldo Libre Total
+# Panel de Saldo Total
 st.markdown(f"""
     <div class="metric-container">
         <p style="margin:0; font-size: 0.9rem; color: #94a3b8;">DINERO LIBRE DISPONIBLE</p>
-        <h1 style="margin:5px 0 0 0; color: #38bdf8;">${saldo_actual_libre:.2f}</h1>
+        <h1 style="margin:5px 0 0 0; color: #38bdf8;">${saldo_libre:.2f}</h1>
     </div>
 """, unsafe_allow_html=True)
 
 st.write("")
 
-# --- FILTROS DE TIEMPO (HOY / MES) ---
-filtro_tiempo = st.radio("Selecciona Vista:", ["📅 Ver Hoy", "📊 Ver Todo el Mes"], horizontal=True)
+# --- SELECTOR DE VISTA (HOY / MES) ---
+filtro_tiempo = st.radio("Seleccionar Vista:", ["📅 Ver Hoy", "📊 Ver Todo el Mes"], horizontal=True)
 
-fecha_hoy_str = datetime.now().strftime("%d/%m/%Y")
-mes_actual_str = datetime.now().strftime("%m/%Y")
+fecha_hoy = datetime.now().strftime("%d/%m/%Y")
+mes_actual = datetime.now().strftime("%m/%Y")
 
 if not df.empty:
     if "Hoy" in filtro_tiempo:
-        df_filtrado = df[df['fecha'] == fecha_hoy_str]
-        st.subheader("📅 Resumen de Hoy")
+        df_filtrado = df[df['fecha'] == fecha_hoy]
+        st.subheader("📅 Resumen y Historial de Hoy")
     else:
-        df_filtrado = df[df['mes_anio'] == mes_actual_str]
-        st.subheader("📊 Resumen del Mes Actual")
+        df_filtrado = df[df['mes_anio'] == mes_actual]
+        st.subheader("📊 Resumen e Historial del Mes")
 
-    # Métricas del filtro seleccionado
     f_ingresos = df_filtrado[df_filtrado['tipo'].str.contains("Ingresos")]['monto'].sum()
-    f_gastos = df_filtrado[df_filtrado['tipo'].str.contains("Gastos")]['monto'].sum()
+    f_gastos = df_filtrado[df_filtrado['tipo'].str.contains("Gastos|Materiales", regex=True)]['monto'].sum()
 
     col1, col2 = st.columns(2)
-    col1.metric("Ingresos en este periodo", f"${f_ingresos:.2f}")
-    col2.metric("Gastos en este periodo", f"${f_gastos:.2f}")
+    col1.metric("Ingresos Periodo", f"${f_ingresos:.2f}")
+    col2.metric("Gastos Periodo", f"${f_gastos:.2f}")
 
     st.write("---")
-    st.subheader("Historial en Tarjetas (Cuadros)")
 
+    # --- TARJETAS INDIVIDUALES (CUADROS) ---
     for index, row in df_filtrado.iterrows():
         if "Ingresos" in row['tipo']:
-            clase_css = "card-ingreso"
+            clase = "card-ingreso"
             signo = "+"
-            cat_label = "Ingreso Taller"
+            cat = "Ingreso Taller"
         elif "Materiales" in row['tipo']:
-            clase_css = "card-taller"
+            clase = "card-taller"
             signo = "-"
-            cat_label = "Gasto Taller"
+            cat = "Gasto Taller"
         else:
-            clase_css = "card-personal"
+            clase = "card-personal"
             signo = "-"
-            cat_label = "Gasto Personal"
+            cat = "Gasto Personal"
 
         st.markdown(f"""
-            <div class="{clase_css}">
+            <div class="{clase}">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <strong>{row['detalle']}</strong><br>
-                        <small><b>{cat_label}</b> | Fecha: {row['fecha']}</small>
+                        <small><b>{cat}</b> | {row['fecha']}</small>
                     </div>
                     <div style="font-size: 1.1rem; font-weight: bold;">
                         {signo}${row['monto']:.2f}
@@ -175,5 +180,58 @@ if not df.empty:
                 </div>
             </div>
         """, unsafe_allow_html=True)
+
+    st.write("---")
+    st.subheader("🖨️ Reportes y Enviar a WhatsApp")
+
+    # Botones de Reporte en Cuadro y WhatsApp
+    col_btn1, col_btn2 = st.columns(2)
+    
+    with col_btn1:
+        if st.button("🖨️ Ver Cuadro del Día"):
+            df_hoy_excel = df[df['fecha'] == fecha_hoy][['fecha', 'tipo', 'detalle', 'monto']]
+            if not df_hoy_excel.empty:
+                st.success("Reporte del Día en formato tabla:")
+                st.dataframe(df_hoy_excel, use_container_width=True)
+            else:
+                st.info("No hay movimientos registrados hoy.")
+
+    with col_btn2:
+        if st.button("🖨️ Ver Cuadro del Mes"):
+            df_mes_excel = df[df['mes_anio'] == mes_actual][['fecha', 'tipo', 'detalle', 'monto']]
+            if not df_mes_excel.empty:
+                st.success("Reporte del Mes en formato tabla:")
+                st.dataframe(df_mes_excel, use_container_width=True)
+            else:
+                st.info("No hay movimientos registrados este mes.")
+
+    # --- BOTÓN DE WHATSAPP PARA EL CIERRE DEL DÍA ---
+    st.write("")
+    df_hoy_wa = df[df['fecha'] == fecha_hoy]
+    if not df_hoy_wa.empty:
+        # Construir mensaje ordenado para WhatsApp
+        msg = f"🚗 *REPORTE DIARIO - TALLER CÉSAR BETO*\n"
+        msg += f"📅 *Fecha:* {fecha_hoy}\n\n"
+        msg += f"🟢 *Ingresos del día:* ${f_ingresos:.2f}\n"
+        msg += f"🔴 *Gastos del día:* ${f_gastos:.2f}\n"
+        msg += f"💵 *Dinero Libre Actual:* ${saldo_libre:.2f}\n\n"
+        msg += f"📋 *Detalle de operaciones:*\n"
+        
+        for index, row in df_hoy_wa.iterrows():
+            signo = "+" if "Ingresos" in row['tipo'] else "-"
+            msg += f"• {row['detalle']}: {signo}${row['monto']:.2f}\n"
+        
+        # Codificar el texto para la URL de WhatsApp
+        mensaje_codificado = urllib.parse.quote(msg)
+        url_whatsapp = f"https://api.whatsapp.com/send?text={mensaje_codificado}"
+        
+        st.markdown(f'''
+            <a href="{url_whatsapp}" target="_blank" class="btn-whatsapp">
+                💬 Enviar Resumen de Hoy a WhatsApp
+            </a>
+        ''', unsafe_allow_html=True)
+    else:
+        st.info("💡 Registra al menos un movimiento hoy para habilitar el botón de WhatsApp.")
+
 else:
-    st.info("Aún no hay movimientos registrados. ¡Empieza registrando arriba!")
+    st.info("No hay registros todavía. Empieza agregando tus operaciones arriba.")
