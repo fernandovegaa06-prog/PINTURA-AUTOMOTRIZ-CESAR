@@ -364,5 +364,6 @@ if not df_hoy_wa.empty:
     mensaje_codificado = urllib.parse.quote(msg)
     url_whatsapp = "https://api.whatsapp.com/send?phone=" + telefono_destino + "&text=" + mensaje_codificado
     
-    btn_html = '<a href="' + url_whatsapp + '" target="_blank" class="btn-whatsapp">💬 Enviar Cierre de Hoy al WhatsApp seleccionado (' + telefono_destino + ')</a>'
-    st.markdown(btn_html, un
+    st.markdown(f'<a href="{url_whatsapp}" target="_blank" class="btn-whatsapp">💬 Enviar Cierre de Hoy al WhatsApp seleccionado ({telefono_destino})</a>', unsafe_allow_html=True)
+else:
+    st.info("💡 Registra al menos una orden o movimiento el día de hoy para habilitar el Cierre de Caja y el envío a WhatsApp.")
