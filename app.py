@@ -457,4 +457,4 @@ if not df_hoy_wa.empty:
     msg += f"🟢 *Total Ingresos (Autos):* ${f_ing_hoy:.2f}\n"
     msg += f"🔴 *Total Gastos (Taller/Personal):* ${f_gastos_hoy:.2f}\n"
     msg += f"💰 *Ganancia Neta (Libre):* ${f_ganancia_hoy:.2f}\n\n"
-    msg += f"💵 *Efectivo actual
+    msg += f"💵 *Efectivo actual"
