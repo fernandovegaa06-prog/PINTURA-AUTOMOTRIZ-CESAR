@@ -23,13 +23,11 @@ def generar_datos_mes_completo():
     materiales = ["Lijas de agua", "Pintura Poliuretano", "Laca Transparente", "Catalizador", "Masilla plástica", "Cinta masking tape"]
     personales = ["Almuerzo", "Desayuno", "Agua / Gaseosa", "Pasajes / Movilidad", "Recarga de celular"]
 
-    # Generar registros de los últimos 30 días
     for i in range(30):
         dia_pasado = hoy - timedelta(days=i)
         fecha_str = dia_pasado.strftime("%d/%m/%Y")
         mes_anio_str = dia_pasado.strftime("%m/%Y")
         
-        # Simular ingresos por autos
         if i % 2 == 0:
             marca = marcas[i % len(marcas)]
             trabajo = trabajos[i % len(trabajos)]
@@ -44,7 +42,6 @@ def generar_datos_mes_completo():
                 "monto": monto_auto
             })
             
-        # Simular gastos de taller
         if i % 3 == 0:
             material = materiales[i % len(materiales)]
             datos.append({
@@ -56,7 +53,6 @@ def generar_datos_mes_completo():
                 "monto": float(30 + (i * 5) % 70)
             })
             
-        # Simular gastos personales diarios
         gasto_per = personales[i % len(personales)]
         datos.append({
             "fecha": fecha_str,
@@ -127,7 +123,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Inicializar Base de Datos en sesión cargando desde Excel
+# Inicializar Base de Datos
 if 'operaciones' not in st.session_state:
     st.session_state.operaciones = cargar_datos_excel()
 
@@ -137,7 +133,7 @@ if 'efectivo_base' not in st.session_state:
 if 'digital_base' not in st.session_state:
     st.session_state.digital_base = 500.0
 
-# Banner visual de pintura automotriz
+# Banner visual
 st.markdown("""
     <div class="banner-taller">
         <h1 style="margin:0; font-size: 2rem; color: #ffffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">🚗 Taller de Pintura Automotriz César Beto</h1>
@@ -145,7 +141,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- CONFIGURACIÓN DE DINERO INICIAL ---
+# Configuración Dinero Inicial
 with st.expander("⚙️ Configurar Dinero Inicial (Efectivo y Digital)"):
     col_eb, col_db = st.columns(2)
     with col_eb:
@@ -158,7 +154,6 @@ with st.expander("⚙️ Configurar Dinero Inicial (Efectivo y Digital)"):
         st.session_state.digital_base = nuevo_digital
         st.success("¡Saldos iniciales actualizados correctamente!")
 
-# Selector principal de qué tipo de registro vas a hacer
 tipo = st.selectbox("Seleccione qué desea registrar:", [
     "🚙 Orden de Trabajo / Cobro por Auto (Ingreso)", 
     "🔴 Gastos Materiales y Herramientas (Taller)", 
@@ -167,32 +162,23 @@ tipo = st.selectbox("Seleccione qué desea registrar:", [
 
 st.write("")
 
-# --- FORMULARIO DE REGISTRO RÁPIDO ---
+# Formulario
 with st.form("form_registro", clear_on_submit=True):
     detalle = ""
     
     if "Orden de Trabajo" in tipo:
         st.markdown("### 🚙 Detalle de la Orden del Vehículo")
-        marcas = [
-            "Toyota", "Hyundai", "Nissan", "Chevrolet", "Kia", "Suzuki", 
-            "Mazda", "Volkswagen", "Renault", "Chery", "Subaru", "Mitsubishi", "Honda", "Otro"
-        ]
-        trabajos = [
-            "Pintado Parachoques Delantero", "Pintado Parachoques Trasero", 
-            "Pintado de Puerta Delantera", "Pintado de Puerta Trasera", 
-            "Pintado Guardafango", "Pintado Capot", "Pintado Tapa / Baúl", 
-            "Pintado Techo", "Pintura Completa Auto", "Pulido y Lijado General", 
-            "Pulido de Faros", "Enderezado y Pintura Completa", "Adelanto / Cuenta de Trabajo"
-        ]
+        marcas = ["Toyota", "Hyundai", "Nissan", "Chevrolet", "Kia", "Suzuki", "Mazda", "Volkswagen", "Renault", "Chery", "Subaru", "Mitsubishi", "Honda", "Otro"]
+        trabajos = ["Pintado Parachoques Delantero", "Pintado Parachoques Trasero", "Pintado de Puerta Delantera", "Pintado de Puerta Trasera", "Pintado Guardafango", "Pintado Capot", "Pintado Tapa / Baúl", "Pintado Techo", "Pintura Completa Auto", "Pulido y Lijado General", "Pulido de Faros", "Enderezado y Pintura Completa", "Adelanto / Cuenta de Trabajo"]
         
         col_m, col_placa = st.columns(2)
         with col_m:
             m_elegida = st.selectbox("Marca del Auto:", marcas)
         with col_placa:
-            placa_auto = st.text_input("Placa / N° de Orden (Ej: ABC-123 o Boleta 001):")
+            placa_auto = st.text_input("Placa / N° de Orden:")
             
-        t_elegido = st.selectbox("Trabajos realizados en este vehículo:", trabajos)
-        observaciones_auto = st.text_input("Notas (Ej: Incluye material, pintura y mano de obra):")
+        t_elegido = st.selectbox("Trabajos realizados:", trabajos)
+        observaciones_auto = st.text_input("Notas adicionales:")
         
         detalle = f"Auto: {m_elegida} | Placa/Ref: {placa_auto if placa_auto else 'S/N'} | Trabajo: {t_elegido}"
         if observaciones_auto:
@@ -200,15 +186,7 @@ with st.form("form_registro", clear_on_submit=True):
 
     elif "Gastos Materiales" in tipo:
         st.markdown("### 🔴 Gasto de Insumos / Taller")
-        materiales = [
-            "Lijas de agua (Grano fino/medio)", "Lijas secas / lija de fierro", 
-            "Pintura Poliuretano / Base color", "Laca Transparente / Clear", 
-            "Catalizador / Endurecedor", "Tiner acrílico / de poliuretano", 
-            "Masilla plástica / de polímero", "Primer / Base primer anticorrosivo",
-            "Cinta masking tape (Azul / Papel)", "Papel craft / Plástico para enmascarar", 
-            "Masilla rápida / Filler", "Discos de corte / Lija de copa",
-            "Compra o reparación de Herramienta", "Pago de luz / agua del taller"
-        ]
+        materiales = ["Lijas de agua", "Lijas secas", "Pintura Poliuretano", "Laca Transparente", "Catalizador", "Tiner acrílico", "Masilla plástica", "Primer", "Cinta masking tape", "Papel craft", "Masilla rápida", "Discos de corte", "Herramienta", "Pago de luz / agua"]
         mat_elegido = st.selectbox("Material / Herramienta:", materiales)
         desc_libre = st.text_input("Detalle extra (opcional):")
         detalle = mat_elegido
@@ -217,11 +195,7 @@ with st.form("form_registro", clear_on_submit=True):
 
     else: 
         st.markdown("### 🟡 Gasto Personal")
-        personales = [
-            "Almuerzo", "Desayuno", "Cena", "Agua / Gaseosa / Refrigerio",
-            "Bebidas / Cerveza", "Pasajes / Movilidad / Taxi", "Cochera / Estacionamiento",
-            "Recarga de celular / Datos", "Farmacia / Medicamentos", "Ropa / Calzado", "Regalos / Varios"
-        ]
+        personales = ["Almuerzo", "Desayuno", "Cena", "Agua / Gaseosa", "Bebidas", "Pasajes / Movilidad", "Cochera", "Recarga de celular", "Farmacia", "Ropa", "Regalos / Varios"]
         per_elegido = st.selectbox("Categoría Personal:", personales)
         desc_libre = st.text_input("Detalle extra (opcional):")
         detalle = per_elegido
@@ -241,33 +215,23 @@ with st.form("form_registro", clear_on_submit=True):
             st.error("Por favor ingresa un monto válido mayor a 0.")
         else:
             now = datetime.now()
-            fecha_str = now.strftime("%d/%m/%Y")
-            mes_anio_str = now.strftime("%m/%Y")
-            
             nueva_op = {
-                "fecha": fecha_str,
-                "mes_anio": mes_anio_str,
+                "fecha": now.strftime("%d/%m/%Y"),
+                "mes_anio": now.strftime("%m/%Y"),
                 "tipo": tipo,
                 "detalle": detalle,
                 "medio": medio_pago,
                 "monto": monto
             }
-            
             st.session_state.operaciones.insert(0, nueva_op)
             guardar_datos_excel(st.session_state.operaciones)
-            
-            st.success("¡Guardado exitosamente en el archivo!")
+            st.success("¡Guardado exitosamente!")
             st.rerun()
 
-# --- CÁLCULOS FINANCIEROS GLOBALES Y POR MEDIO ---
+# Cálculos
 df = pd.DataFrame(st.session_state.operaciones)
-
-total_ingresos = 0.0
-total_gastos_taller = 0.0
-total_gastos_personal = 0.0
-
-efectivo_neto_movs = 0.0
-digital_neto_movs = 0.0
+total_ingresos, total_gastos_taller, total_gastos_personal = 0.0, 0.0, 0.0
+efectivo_neto_movs, digital_neto_movs = 0.0, 0.0
 
 if not df.empty:
     total_ingresos = df[df['tipo'].str.contains("Orden de Trabajo")]['monto'].sum()
@@ -277,7 +241,6 @@ if not df.empty:
     for _, row in df.iterrows():
         es_ingreso = "Orden de Trabajo" in str(row['tipo'])
         valor = float(row['monto']) if es_ingreso else -float(row['monto'])
-        
         if "Efectivo" in str(row['medio']):
             efectivo_neto_movs += valor
         else:
@@ -285,12 +248,11 @@ if not df.empty:
 
 total_gastos_general = total_gastos_taller + total_gastos_personal
 ganancia_neta = total_ingresos - total_gastos_general
-
 efectivo_actual = st.session_state.efectivo_base + efectivo_neto_movs
 digital_actual = st.session_state.digital_base + digital_neto_movs
 saldo_total_libre = efectivo_actual + digital_actual
 
-# --- PANEL DE ESTADÍSTICAS Y GANANCIAS ---
+# Métricas
 st.markdown("### 📈 Resumen Financiero Total")
 col_g1, col_g2 = st.columns(2)
 with col_g1:
@@ -300,7 +262,6 @@ with col_g2:
     st.metric("🟡 Gasto Total Personal", f"${total_gastos_personal:.2f}")
     st.metric("💰 Ganancia Neta Real", f"${ganancia_neta:.2f}")
 
-# Panel de Dinero Disponible (Efectivo vs Digital)
 st.markdown(f"""
     <div class="metric-container">
         <p style="margin:0; font-size: 0.9rem; color: #64748b; font-weight: bold;">DINERO DISPONIBLE TOTAL EN CAJA Y BANCO</p>
@@ -314,9 +275,7 @@ st.markdown(f"""
 
 st.write("")
 
-# --- SELECTOR DE VISTA (HOY / MES) ---
 filtro_tiempo = st.radio("Seleccionar Vista:", ["📅 Ver Hoy", "📊 Ver Todo el Mes"], horizontal=True)
-
 fecha_hoy = datetime.now().strftime("%d/%m/%Y")
 mes_actual = datetime.now().strftime("%m/%Y")
 
@@ -340,20 +299,13 @@ if not df.empty:
 
     st.write("---")
 
-    # --- TARJETAS INDIVIDUALES ---
     for index, row in df_filtrado.iterrows():
         if "Orden de Trabajo" in str(row['tipo']):
-            clase = "card-orden"
-            signo = "+"
-            cat = "🚗 Orden de Auto"
+            clase, signo, cat = "card-orden", "+", "🚗 Orden de Auto"
         elif "Materiales" in str(row['tipo']):
-            clase = "card-taller"
-            signo = "-"
-            cat = "🔴 Insumo Taller"
+            clase, signo, cat = "card-taller", "-", "🔴 Insumo Taller"
         else:
-            clase = "card-personal"
-            signo = "-"
-            cat = "🟡 Gasto Personal"
+            clase, signo, cat = "card-personal", "-", "🟡 Gasto Personal"
 
         medio_icono = "💵" if "Efectivo" in str(row['medio']) else "📱"
 
@@ -373,7 +325,6 @@ if not df.empty:
 
     st.write("---")
     st.subheader("🖨️ Tablas y Reportes Detallados")
-
     col_btn1, col_btn2 = st.columns(2)
     with col_btn1:
         ver_cuadro_dia = st.button("📋 Ver Cuadro del Día (Tabla)")
@@ -386,7 +337,7 @@ if not df.empty:
         if not df_hoy_tabla.empty:
             st.dataframe(df_hoy_tabla, use_container_width=True)
         else:
-            st.info("No hay movimientos registrados para el día de hoy.")
+            st.info("No hay movimientos registrados hoy.")
 
     if ver_cuadro_mes:
         st.markdown("### 📊 Cuadro Detallado del Mes")
@@ -394,52 +345,38 @@ if not df.empty:
         if not df_mes_tabla.empty:
             st.dataframe(df_mes_tabla, use_container_width=True)
         else:
-            st.info("No hay movimientos registrados para este mes.")
+            st.info("No hay movimientos este mes.")
 
 else:
     st.info("No hay registros todavía.")
 
-# --- SECCIÓN DE ADMINISTRAR / CORREGIR REGISTROS ---
+# Administrar registros
 st.write("---")
 st.markdown("""
     <div class="admin-box">
         <h3 style="margin-top:0; color: #e11d48;">⚙️ Administrar y Corregir Registros</h3>
-        <p style="color: #334155; font-size: 0.95rem;">
-            ¿Te equivocaste en un monto o descripción? Selecciona la operación que deseas eliminar de la lista.
-        </p>
+        <p style="color: #334155; font-size: 0.95rem;">Selecciona la operación que deseas eliminar si hubo algún error.</p>
     </div>
 """, unsafe_allow_html=True)
 
 if not df.empty:
-    opciones_borrar = []
-    for idx, row in df.iterrows():
-        etiqueta_corta = f"[{row['fecha']}] {row['detalle']} - ${float(row['monto']):.2f} ({row['medio']})"
-        opciones_borrar.append((idx, etiqueta_corta))
+    opciones_borrar = [(idx, f"[{row['fecha']}] {row['detalle']} - ${float(row['monto']):.2f} ({row['medio']})") for idx, row in df.iterrows()]
+    seleccion_a_borrar = st.selectbox("Selecciona el registro a eliminar:", options=[item[0] for item in opciones_borrar], format_func=lambda x: next(item[1] for item in opciones_borrar if item[0] == x))
     
-    seleccion_a_borrar = st.selectbox(
-        "Selecciona el registro incorrecto para eliminar:", 
-        options=[item[0] for item in opciones_borrar],
-        format_func=lambda x: next(item[1] for item in opciones_borrar if item[0] == x)
-    )
-    
-    col_del1, col_del2 = st.columns([1, 2])
-    with col_del1:
-        if st.button("🗑️ Eliminar Registro", type="primary"):
-            st.session_state.operaciones.pop(seleccion_a_borrar)
-            guardar_datos_excel(st.session_state.operaciones)
-            st.success("¡Registro eliminado correctamente!")
-            st.rerun()
+    if st.button("🗑️ Eliminar Registro", type="primary"):
+        st.session_state.operaciones.pop(seleccion_a_borrar)
+        guardar_datos_excel(st.session_state.operaciones)
+        st.success("¡Registro eliminado correctamente!")
+        st.rerun()
 else:
-    st.info("No hay registros para corregir o eliminar todavía.")
+    st.info("No hay registros para corregir.")
 
-# --- SECCIÓN DE CIERRE DE CAJA DIARIO Y WHATSAPP ---
+# Cierre de Caja y WhatsApp
 st.write("---")
 st.markdown("""
     <div class="cierre-box">
         <h3 style="margin-top:0; color: #0284c7;">🔒 Cierre de Caja y Envío a WhatsApp (984116361)</h3>
-        <p style="color: #334155; font-size: 0.95rem;">
-            Aquí puedes revisar el reporte resumido del día de hoy listo para enviarlo a tu WhatsApp personal con un solo clic.
-        </p>
+        <p style="color: #334155; font-size: 0.95rem;">Revisa el reporte del día listo para enviarlo a WhatsApp.</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -452,10 +389,29 @@ if not df_hoy_wa.empty:
     f_gastos_hoy = f_gt_hoy + f_gp_hoy
     f_ganancia_hoy = f_ing_hoy - f_gastos_hoy
     
+    # Construcción segura de la variable msg por concatenación (sin errores de f-string complejo)
     msg = "🔒 *CIERRE DE CAJA - TALLER CÉSAR BETO*\n"
-    msg += f"📅 *Fecha:* {fecha_hoy}\n\n"
-    msg += f"🟢 *Total Ingresos (Autos):* ${f_ing_hoy:.2f}\n"
-    msg += f"🔴 *Total Gastos (Taller/Personal):* ${f_gastos_hoy:.2f}\n"
-    msg += f"💰 *Ganancia Neta (Libre):* ${f_ganancia_hoy:.2f}\n\n"
-    msg += "Efectivo actual en caja: $" + f"{efectivo_actual:.2f}\n"
-    msg += "Digital actual (Y
+    msg += "📅 Fecha: " + fecha_hoy + "\n\n"
+    msg += "🟢 Total Ingresos (Autos): $" + f"{f_ing_hoy:.2f}\n"
+    msg += "🔴 Total Gastos: $" + f"{f_gastos_hoy:.2f}\n"
+    msg += "💰 Ganancia Neta: $" + f"{f_ganancia_hoy:.2f}\n\n"
+    msg += "Efectivo actual: $" + f"{efectivo_actual:.2f}\n"
+    msg += "Digital actual: $" + f"{digital_actual:.2f}\n"
+    msg += "Dinero Total Disponible: $" + f"{saldo_total_libre:.2f}\n\n"
+    msg += "📋 Detalle de hoy:\n"
+    
+    for index, row in df_hoy_wa.iterrows():
+        signo = "+" if "Orden de Trabajo" in str(row['tipo']) else "-"
+        medio_txt = "Efectivo" if "Efectivo" in str(row['medio']) else "Digital"
+        msg += "• " + str(row['detalle']) + " (" + medio_txt + "): " + signo + "$" + f"{float(row['monto']):.2f}\n"
+    
+    mensaje_codificado = urllib.parse.quote(msg)
+    url_whatsapp = "https://api.whatsapp.com/send?phone=51984116361&text=" + mensaje_codificado
+    
+    st.markdown(f'''
+        <a href="{url_whatsapp}" target="_blank" class="btn-whatsapp">
+            💬 Enviar Cierre de Caja a mi WhatsApp (984116361)
+        </a>
+    ''', unsafe_allow_html=True)
+else:
+    st.info("💡 Registra al menos una orden o movimiento el día de hoy para habilitar el Cierre de Caja y el envío a WhatsApp.")
