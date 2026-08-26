@@ -6,7 +6,7 @@ import urllib.parse
 # Configuración inicial de la página
 st.set_page_config(page_title="Caja Taller Automotriz", page_icon="🚗", layout="centered")
 
-# Estilos CSS (Fondo blanco/limPIO y banner automotriz elegante)
+# Estilos CSS (Fondo claro, banner automotriz y tarjetas estilizadas)
 st.markdown("""
     <style>
     .banner-taller {
@@ -23,33 +23,42 @@ st.markdown("""
     .card-ingreso { background-color: #dcfce7; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #22c55e; margin-bottom: 8px; color: #166534; }
     .card-taller { background-color: #fee2e2; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #ef4444; margin-bottom: 8px; color: #991b1b; }
     .card-personal { background-color: #fef3c7; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #f59e0b; margin-bottom: 8px; color: #92400e; }
-    .metric-container { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .metric-container { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
     .btn-whatsapp { display: block; background-color: #25d366; color: white; padding: 12px 20px; border-radius: 10px; text-decoration: none; font-weight: bold; text-align: center; width: 100%; margin-top: 15px; font-size: 1rem; }
     .btn-whatsapp:hover { background-color: #22bf5b; color: white; }
     </style>
 """, unsafe_allow_html=True)
 
-# Inicializar Base de Datos en la sesión
+# Inicializar Base de Datos y Saldos en la sesión
 if 'operaciones' not in st.session_state:
     st.session_state.operaciones = []
 
-if 'saldo_base' not in st.session_state:
-    st.session_state.saldo_base = 0.0
+if 'efectivo_base' not in st.session_state:
+    st.session_state.efectivo_base = 0.0
+
+if 'digital_base' not in st.session_state:
+    st.session_state.digital_base = 0.0
 
 # Banner visual de pintura automotriz
 st.markdown("""
     <div class="banner-taller">
         <h1 style="margin:0; font-size: 2rem; color: #ffffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">🚗 Taller de Pintura Automotriz César Beto</h1>
-        <p style="margin:5px 0 0 0; color: #e2e8f0; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Control de Caja y Reportes Diarios</p>
+        <p style="margin:5px 0 0 0; color: #e2e8f0; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Control de Caja, Efectivo y Digital</p>
     </div>
 """, unsafe_allow_html=True)
 
-# --- CONFIGURACIÓN DE SALDO INICIAL ---
-with st.expander("⚙️ Configurar Dinero Inicial / Base"):
-    nuevo_saldo = st.number_input("Saldo base actual en Yape o Caja ($):", value=st.session_state.saldo_base, step=10.0)
-    if st.button("Fijar Saldo Base"):
-        st.session_state.saldo_base = nuevo_saldo
-        st.success("¡Saldo base actualizado!")
+# --- CONFIGURACIÓN DE DINERO INICIAL ---
+with st.expander("⚙️ Configurar Dinero Inicial (Efectivo y Digital)"):
+    col_eb, col_db = st.columns(2)
+    with col_eb:
+        nuevo_efectivo = st.number_input("Base en Efectivo ($ / S/):", value=st.session_state.efectivo_base, step=10.0)
+    with col_db:
+        nuevo_digital = st.number_input("Base Digital / Yape ($ / S/):", value=st.session_state.digital_base, step=10.0)
+        
+    if st.button("Fijar Saldos Base"):
+        st.session_state.efectivo_base = nuevo_efectivo
+        st.session_state.digital_base = nuevo_digital
+        st.success("¡Saldos iniciales actualizados correctamente!")
 
 # Selector principal de categoría fuera del formulario (cambio ultra rápido sin congelarse)
 tipo = st.selectbox("Tipo de Operación:", [
@@ -64,10 +73,27 @@ st.write("")
 with st.form("form_registro", clear_on_submit=True):
     detalle = ""
     
-    # 1. Si es Ingreso
+    # 1. Si es Ingreso (Ampliando marcas y trabajos detallados)
     if "Ingresos" in tipo:
-        marcas = ["Toyota", "Hyundai", "Nissan", "Chevrolet", "Kia", "Suzuki", "Mazda", "Volkswagen", "Otro"]
-        trabajos = ["Pintado Parachoques Delantero", "Pintado Parachoques Trasero", "Pintado de Puerta", "Pintado Capot / Tapa", "Pintura Completa Auto", "Adelanto de Trabajo"]
+        marcas = [
+            "Toyota", "Hyundai", "Nissan", "Chevrolet", "Kia", "Suzuki", 
+            "Mazda", "Volkswagen", "Renault", "Chery", "Subaru", "Mitsubishi", "Honda", "Otro"
+        ]
+        trabajos = [
+            "Pintado Parachoques Delantero", 
+            "Pintado Parachoques Trasero", 
+            "Pintado de Puerta Delantera", 
+            "Pintado de Puerta Trasera", 
+            "Pintado Guardafango", 
+            "Pintado Capot", 
+            "Pintado Tapa / Baúl", 
+            "Pintado Techo", 
+            "Pintura Completa Auto", 
+            "Pulido y Lijado General", 
+            "Pulido de Faros",
+            "Enderezado y Pintura",
+            "Adelanto de Trabajo"
+        ]
         
         col_m, col_t = st.columns(2)
         with col_m:
@@ -75,30 +101,49 @@ with st.form("form_registro", clear_on_submit=True):
         with col_t:
             t_elegido = st.selectbox("Trabajo Realizado:", trabajos)
             
-        desc_libre = st.text_input("Detalle extra (opcional):")
+        desc_libre = st.text_input("Detalle extra (Ej: Color rojo perlado, placa...):")
         detalle = f"{t_elegido} ({m_elegida})"
         if desc_libre:
             detalle += f" - {desc_libre}"
 
-    # 2. Si es Gasto de Taller
+    # 2. Si es Gasto de Taller (Ampliando materiales e insumos de pintura)
     elif "Gastos Materiales" in tipo:
-        materiales = ["Lijas de agua / seca", "Pintura Poliuretano / Base", "Tiner / Disolvente", "Masilla plástica", "Cinta masking tape / Papel", "Compra de Herramienta"]
+        materiales = [
+            "Lijas de agua (Grano fino/medio)", 
+            "Lijas secas / lija de fierro", 
+            "Pintura Poliuretano / Base color", 
+            "Laca Transparente / Clear", 
+            "Catalizador / Endurecedor",
+            "Tiner acrílico / de poliuretano", 
+            "Masilla plástica / de polímero", 
+            "Primer / Base primer anticorrosivo",
+            "Cinta masking tape (Azul / Papel)", 
+            "Papel craft / Plástico para enmascarar", 
+            "Masilla rápida / Filler",
+            "Discos de corte / Lija de copa",
+            "Compra o reparación de Herramienta",
+            "Pago de luz / agua del taller"
+        ]
         mat_elegido = st.selectbox("Material / Herramienta:", materiales)
         desc_libre = st.text_input("Detalle extra (opcional):")
         detalle = mat_elegido
         if desc_libre:
             detalle += f" - {desc_libre}"
 
-    # 3. Si es Gasto Personal
+    # 3. Si es Gasto Personal (Ampliando opciones del día a dia)
     else: 
         personales = [
             "Almuerzo", 
             "Desayuno", 
             "Cena", 
+            "Agua / Gaseosa / Refrigerio",
             "Bebidas / Cerveza", 
-            "Ropa", 
-            "Regalos", 
-            "Pasajes / Movilidad"
+            "Pasajes / Movilidad / Taxi", 
+            "Cochera / Estacionamiento",
+            "Recarga de celular / Datos",
+            "Farmacia / Medicamentos",
+            "Ropa / Calzado", 
+            "Regalos / Varios"
         ]
         per_elegido = st.selectbox("Categoría Personal:", personales)
         desc_libre = st.text_input("Detalle extra (opcional):")
@@ -106,7 +151,11 @@ with st.form("form_registro", clear_on_submit=True):
         if desc_libre:
             detalle += f" - {desc_libre}"
 
-    monto = st.number_input("Monto ($):", min_value=0.0, step=1.0, format="%.2f")
+    col_monto, col_medio = st.columns(2)
+    with col_monto:
+        monto = st.number_input("Monto ($ / S/):", min_value=0.0, step=1.0, format="%.2f")
+    with col_medio:
+        medio_pago = st.selectbox("Medio de Pago / Cobro:", ["💵 Efectivo", "📱 Digital (Yape / Banco)"])
     
     enviado = st.form_submit_button("Guardar Operación")
     
@@ -119,6 +168,7 @@ with st.form("form_registro", clear_on_submit=True):
                 "tipo": tipo,
                 "detalle": detalle,
                 "monto": monto,
+                "medio": medio_pago,
                 "fecha": now.strftime("%d/%m/%Y"),
                 "mes_anio": now.strftime("%m/%Y")
             }
@@ -126,25 +176,56 @@ with st.form("form_registro", clear_on_submit=True):
             st.success("¡Guardado con éxito!")
             st.rerun()
 
-# --- PROCESAMIENTO GENERAL ---
+# --- CÁLCULOS FINANCIEROS GLOBALES Y POR MEDIO ---
 df = pd.DataFrame(st.session_state.operaciones)
 
-total_ing_g = 0.0
-total_gt_g = 0.0
-total_gp_g = 0.0
+total_ingresos = 0.0
+total_gastos_taller = 0.0
+total_gastos_personal = 0.0
+
+efectivo_neto_movs = 0.0
+digital_neto_movs = 0.0
 
 if not df.empty:
-    total_ing_g = df[df['tipo'].str.contains("Ingresos")]['monto'].sum()
-    total_gt_g = df[df['tipo'].str.contains("Materiales")]['monto'].sum()
-    total_gp_g = df[df['tipo'].str.contains("Gastos Personales")]['monto'].sum()
+    total_ingresos = df[df['tipo'].str.contains("Ingresos")]['monto'].sum()
+    total_gastos_taller = df[df['tipo'].str.contains("Materiales")]['monto'].sum()
+    total_gastos_personal = df[df['tipo'].str.contains("Gastos Personales")]['monto'].sum()
 
-saldo_libre = st.session_state.saldo_base + total_ing_g - total_gt_g - total_gp_g
+    for _, row in df.iterrows():
+        es_ingreso = "Ingresos" in row['tipo']
+        valor = row['monto'] if es_ingreso else -row['monto']
+        
+        if "Efectivo" in row['medio']:
+            efectivo_neto_movs += valor
+        else:
+            digital_neto_movs += valor
 
-# Panel de Saldo Total
+total_gastos_general = total_gastos_taller + total_gastos_personal
+ganancia_neta = total_ingresos - total_gastos_general
+
+efectivo_actual = st.session_state.efectivo_base + efectivo_neto_movs
+digital_actual = st.session_state.digital_base + digital_neto_movs
+saldo_total_libre = efectivo_actual + digital_actual
+
+# --- PANEL DE ESTADÍSTICAS Y GANANCIAS ---
+st.markdown("### 📈 Resumen Financiero Total")
+col_g1, col_g2 = st.columns(2)
+with col_g1:
+    st.metric("🟢 Ingreso Total", f"${total_ingresos:.2f}")
+    st.metric("🔴 Gasto Total Taller", f"${total_gastos_taller:.2f}")
+with col_g2:
+    st.metric("🟡 Gasto Total Personal", f"${total_gastos_personal:.2f}")
+    st.metric("💰 Ganancia Neta Real", f"${ganancia_neta:.2f}")
+
+# Panel de Dinero Disponible (Efectivo vs Digital)
 st.markdown(f"""
     <div class="metric-container">
-        <p style="margin:0; font-size: 0.9rem; color: #64748b; font-weight: bold;">DINERO LIBRE DISPONIBLE</p>
-        <h1 style="margin:5px 0 0 0; color: #0284c7;">${saldo_libre:.2f}</h1>
+        <p style="margin:0; font-size: 0.9rem; color: #64748b; font-weight: bold;">DINERO DISPONIBLE TOTAL EN CAJA Y BANCO</p>
+        <h1 style="margin:5px 0 5px 0; color: #0284c7;">${saldo_total_libre:.2f}</h1>
+        <div style="display: flex; justify-content: space-around; margin-top: 10px; font-size: 0.95rem; border-top: 1px solid #e2e8f0; padding-top: 8px;">
+            <span>💵 <b>Efectivo:</b> ${efectivo_actual:.2f}</span>
+            <span>📱 <b>Digital / Yape:</b> ${digital_actual:.2f}</span>
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -188,12 +269,14 @@ if not df.empty:
             signo = "-"
             cat = "Gasto Personal"
 
+        medio_icono = "💵" if "Efectivo" in row['medio'] else "📱"
+
         st.markdown(f"""
             <div class="{clase}">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <strong>{row['detalle']}</strong><br>
-                        <small><b>{cat}</b> | {row['fecha']}</small>
+                        <small><b>{cat}</b> ({medio_icono} {row['medio']}) | {row['fecha']}</small>
                     </div>
                     <div style="font-size: 1.1rem; font-weight: bold;">
                         {signo}${row['monto']:.2f}
@@ -206,7 +289,6 @@ if not df.empty:
     st.subheader("🖨️ Cuadros y Reportes para Imprimir")
     st.write("Selecciona una opción para desplegar el cuadro completo en formato tabla listo para copiar o revisar:")
 
-    # Botones de Reporte en Cuadro (Estructura corregida para que muestre el cuadro claramente)
     col_btn1, col_btn2 = st.columns(2)
     
     with col_btn1:
@@ -216,7 +298,7 @@ if not df.empty:
 
     if ver_cuadro_dia:
         st.markdown("### 📋 Cuadro Detallado del Día")
-        df_hoy_tabla = df[df['fecha'] == fecha_hoy][['fecha', 'tipo', 'detalle', 'monto']]
+        df_hoy_tabla = df[df['fecha'] == fecha_hoy][['fecha', 'tipo', 'detalle', 'medio', 'monto']]
         if not df_hoy_tabla.empty:
             st.dataframe(df_hoy_tabla, use_container_width=True)
         else:
@@ -224,7 +306,7 @@ if not df.empty:
 
     if ver_cuadro_mes:
         st.markdown("### 📊 Cuadro Detallado del Mes")
-        df_mes_tabla = df[df['mes_anio'] == mes_actual][['fecha', 'tipo', 'detalle', 'monto']]
+        df_mes_tabla = df[df['mes_anio'] == mes_actual][['fecha', 'tipo', 'detalle', 'medio', 'monto']]
         if not df_mes_tabla.empty:
             st.dataframe(df_mes_tabla, use_container_width=True)
         else:
@@ -247,12 +329,15 @@ if not df_hoy_wa.empty:
     msg += f"📅 *Fecha:* {fecha_hoy}\n\n"
     msg += f"🟢 *Ingresos del día:* ${f_ing_hoy:.2f}\n"
     msg += f"🔴 *Gastos del día:* ${f_gas_hoy:.2f}\n"
-    msg += f"💵 *Dinero Libre Actual:* ${saldo_libre:.2f}\n\n"
+    msg += f"💵 *Efectivo actual:* ${efectivo_actual:.2f}\n"
+    msg += f"📱 *Digital actual:* ${digital_actual:.2f}\n"
+    msg += f"💰 *Total en Caja/Banco:* ${saldo_total_libre:.2f}\n\n"
     msg += f"📋 *Detalle de operaciones:*\n"
     
     for index, row in df_hoy_wa.iterrows():
         signo = "+" if "Ingresos" in row['tipo'] else "-"
-        msg += f"• {row['detalle']}: {signo}${row['monto']:.2f}\n"
+        medio_txt = "Efectivo" if "Efectivo" in row['medio'] else "Digital"
+        msg += f"• {row['detalle']} ({medio_txt}): {signo}${row['monto']:.2f}\n"
     
     mensaje_codificado = urllib.parse.quote(msg)
     url_whatsapp = f"https://api.whatsapp.com/send?text={mensaje_codificado}"
