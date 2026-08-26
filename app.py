@@ -452,10 +452,17 @@ if not df_hoy_wa.empty:
     f_gastos_hoy = f_gt_hoy + f_gp_hoy
     f_ganancia_hoy = f_ing_hoy - f_gastos_hoy
     
-    msg = "🔒 *CIERRE DE CAJA - TALLER CÉSAR BETO*\n"
+  msg = "🔒 *CIERRE DE CAJA - TALLER CÉSAR BETO*\n"
     msg += f"📅 *Fecha:* {fecha_hoy}\n\n"
     msg += f"🟢 *Total Ingresos (Autos):* ${f_ing_hoy:.2f}\n"
     msg += f"🔴 *Total Gastos (Taller/Personal):* ${f_gastos_hoy:.2f}\n"
     msg += f"💰 *Ganancia Neta (Libre):* ${f_ganancia_hoy:.2f}\n\n"
-    msg += f"Efectivo actual en caja: ${efectivo_actual:.2f}\n"
-    msg += f"Digital actual (Yape/
+    msg += "Efectivo actual en caja: $" + f"{efectivo_actual:.2f}\n"
+    msg += "Digital actual (Yape/Banco): $" + f"{digital_actual:.2f}\n"
+    msg += "Dinero Total Disponible: $" + f"{saldo_total_libre:.2f}\n\n"
+    msg += "📋 *Detalle de lo que se hizo hoy:*\n"
+    
+    for index, row in df_hoy_wa.iterrows():
+        signo = "+" if "Orden de Trabajo" in str(row['tipo']) else "-"
+        medio_txt = "Efectivo" if "Efectivo" in str(row['medio']) else "Digital"
+        msg += f"• {row['detalle']} ({medio_txt}): {signo}${float(row['monto']):.2f}\n"
