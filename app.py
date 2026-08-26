@@ -4,9 +4,9 @@ from datetime import datetime
 import urllib.parse
 
 # Configuración inicial de la página
-st.set_page_config(page_title="Caja Taller Automotriz", page_icon="🚗", layout="centered")
+st.set_page_config(page_title="Caja Taller Automotriz César Beto", page_icon="🚗", layout="centered")
 
-# Estilos CSS (Fondo claro, banner automotriz y tarjetas estilizadas)
+# Estilos CSS
 st.markdown("""
     <style>
     .banner-taller {
@@ -43,7 +43,7 @@ if 'digital_base' not in st.session_state:
 st.markdown("""
     <div class="banner-taller">
         <h1 style="margin:0; font-size: 2rem; color: #ffffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">🚗 Taller de Pintura Automotriz César Beto</h1>
-        <p style="margin:5px 0 0 0; color: #e2e8f0; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Control de Caja por Órdenes de Autos y Gastos</p>
+        <p style="margin:5px 0 0 0; color: #e2e8f0; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Control de Caja por Órdenes de Autos y Ganancias</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -73,7 +73,6 @@ st.write("")
 with st.form("form_registro", clear_on_submit=True):
     detalle = ""
     
-    # 1. ORDEN DE TRABAJO POR AUTO (Estructura de boleta / cobro global de mano de obra + materiales internos)
     if "Orden de Trabajo" in tipo:
         st.markdown("### 🚙 Detalle de la Orden del Vehículo")
         marcas = [
@@ -105,12 +104,10 @@ with st.form("form_registro", clear_on_submit=True):
         t_elegido = st.selectbox("Trabajos realizados en este vehículo:", trabajos)
         observaciones_auto = st.text_input("Notas (Ej: Incluye material, pintura y mano de obra):")
         
-        # Armar un detalle súper ordenado tipo boleta
         detalle = f"Auto: {m_elegida} | Placa/Ref: {placa_auto if placa_auto else 'S/N'} | Trabajo: {t_elegido}"
         if observaciones_auto:
             detalle += f" | Nota: {observaciones_auto}"
 
-    # 2. GASTOS DE TALLER (Materiales sueltos que compras para stock o uso general)
     elif "Gastos Materiales" in tipo:
         st.markdown("### 🔴 Gasto de Insumos / Taller")
         materiales = [
@@ -135,7 +132,6 @@ with st.form("form_registro", clear_on_submit=True):
         if desc_libre:
             detalle += f" - {desc_libre}"
 
-    # 3. GASTOS PERSONALES
     else: 
         st.markdown("### 🟡 Gasto Personal")
         personales = [
@@ -252,11 +248,14 @@ if not df.empty:
         st.subheader("📊 Resumen e Historial del Mes")
 
     f_ingresos = df_filtrado[df_filtrado['tipo'].str.contains("Orden de Trabajo")]['monto'].sum()
-    f_gastos = df_filtrado[df_filtrado['tipo'].str.contains("Gastos|Materiales", regex=True)]['monto'].sum()
+    f_g_taller = df_filtrado[df_filtrado['tipo'].str.contains("Materiales")]['monto'].sum()
+    f_g_personal = df_filtrado[df_filtrado['tipo'].str.contains("Gastos Personales")]['monto'].sum()
+    f_ganancia_periodo = f_ingresos - (f_g_taller + f_g_personal)
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     col1.metric("Ingresos Periodo", f"${f_ingresos:.2f}")
-    col2.metric("Gastos Periodo", f"${f_gastos:.2f}")
+    col2.metric("Gastos Periodo", f"${(f_g_taller + f_g_personal):.2f}")
+    col3.metric("Ganancia Periodo", f"${f_ganancia_periodo:.2f}")
 
     st.write("---")
 
@@ -292,8 +291,8 @@ if not df.empty:
         """, unsafe_allow_html=True)
 
     st.write("---")
-    st.subheader("🖨️ Cuadros y Reportes para Imprimir")
-    st.write("Selecciona una opción para desplegar el cuadro completo en formato tabla organizado por vehículo/gastos:")
+    st.subheader("🖨️ Cuadros y Reportes con Totales y Ganancia")
+    st.write("Selecciona una opción para ver la tabla completa con el balance de lo que ingresó, se gastó y la ganancia libre:")
 
     col_btn1, col_btn2 = st.columns(2)
     
@@ -307,6 +306,11 @@ if not df.empty:
         df_hoy_tabla = df[df['fecha'] == fecha_hoy][['fecha', 'tipo', 'detalle', 'medio', 'monto']]
         if not df_hoy_tabla.empty:
             st.dataframe(df_hoy_tabla, use_container_width=True)
+            st.markdown(f"""
+                * **Total Ingresos (Órdenes):** ${f_ingresos:.2f}
+                * **Total Gastos (Taller + Personal):** ${(f_g_taller + f_g_personal):.2f}
+                * **💰 GANANCIA NETA DEL DÍA (Para tu bolsillo / caja libre):** **${f_ganancia_periodo:.2f}**
+            """)
         else:
             st.info("No hay movimientos registrados para el día de hoy.")
 
@@ -315,29 +319,38 @@ if not df.empty:
         df_mes_tabla = df[df['mes_anio'] == mes_actual][['fecha', 'tipo', 'detalle', 'medio', 'monto']]
         if not df_mes_tabla.empty:
             st.dataframe(df_mes_tabla, use_container_width=True)
+            st.markdown(f"""
+                * **Total Ingresos del Mes:** ${f_ingresos:.2f}
+                * **Total Gastos del Mes:** ${(f_g_taller + f_g_personal):.2f}
+                * **💰 GANANCIA NETA DEL MES (Libre para ti):** **${f_ganancia_periodo:.2f}**
+            """)
         else:
             st.info("No hay movimientos registrados para este mes.")
 
 else:
     st.info("No hay registros todavía. Empieza agregando tus órdenes de autos y gastos arriba.")
 
-# --- SECCIÓN DE WHATSAPP ---
+# --- SECCIÓN DE WHATSAPP (NÚMERO 984116361) ---
 st.write("---")
-st.subheader("💬 Envío de Cierre a WhatsApp")
+st.subheader("💬 Envío de Cierre a WhatsApp (984116361)")
 
 df_hoy_wa = df[df['fecha'] == fecha_hoy] if not df.empty else pd.DataFrame()
 
 if not df_hoy_wa.empty:
     f_ing_hoy = df_hoy_wa[df_hoy_wa['tipo'].str.contains("Orden de Trabajo")]['monto'].sum()
-    f_gas_hoy = df_hoy_wa[df_hoy_wa['tipo'].str.contains("Gastos|Materiales", regex=True)]['monto'].sum()
+    f_gt_hoy = df_hoy_wa[df_hoy_wa['tipo'].str.contains("Materiales")]['monto'].sum()
+    f_gp_hoy = df_hoy_wa[df_hoy_wa['tipo'].str.contains("Gastos Personales")]['monto'].sum()
+    f_gastos_hoy = f_gt_hoy + f_gp_hoy
+    f_ganancia_hoy = f_ing_hoy - f_gastos_hoy
     
     msg = f"🚗 *REPORTE DIARIO - TALLER CÉSAR BETO*\n"
     msg += f"📅 *Fecha:* {fecha_hoy}\n\n"
-    msg += f"🟢 *Ingresos por Órdenes de Autos:* ${f_ing_hoy:.2f}\n"
-    msg += f"🔴 *Gastos del día:* ${f_gas_hoy:.2f}\n"
-    msg += f"💵 *Efectivo actual:* ${efectivo_actual:.2f}\n"
-    msg += f"📱 *Digital actual:* ${digital_actual:.2f}\n"
-    msg += f"💰 *Total en Caja/Banco:* ${saldo_total_libre:.2f}\n\n"
+    msg += f"🟢 *Total Ingresos (Autos):* ${f_ing_hoy:.2f}\n"
+    msg += f"🔴 *Total Gastos (Taller/Personal):* ${f_gastos_hoy:.2f}\n"
+    msg += f"💰 *Ganancia Neta (Libre):* ${f_ganancia_hoy:.2f}\n\n"
+    msg += f"💵 *Efectivo actual en caja:* ${efectivo_actual:.2f}\n"
+    msg += f"📱 *Digital actual (Yape/Banco):* ${digital_actual:.2f}\n"
+    msg += f"💼 *Dinero Total Disponible:* ${saldo_total_libre:.2f}\n\n"
     msg += f"📋 *Detalle de operaciones:*\n"
     
     for index, row in df_hoy_wa.iterrows():
@@ -346,12 +359,13 @@ if not df_hoy_wa.empty:
         msg += f"• {row['detalle']} ({medio_txt}): {signo}${row['monto']:.2f}\n"
     
     mensaje_codificado = urllib.parse.quote(msg)
-    url_whatsapp = f"https://api.whatsapp.com/send?text={mensaje_codificado}"
+    # Enlace configurado para enviar al número 51984116361
+    url_whatsapp = f"https://api.whatsapp.com/send?phone=51984116361&text={mensaje_codificado}"
     
     st.markdown(f'''
         <a href="{url_whatsapp}" target="_blank" class="btn-whatsapp">
-            💬 Enviar Resumen de Hoy a WhatsApp
+            💬 Enviar Reporte Completo al WhatsApp 984116361
         </a>
     ''', unsafe_allow_html=True)
 else:
-    st.info("💡 Registra al menos una orden o movimiento el día de hoy para habilitar el botón de envío automático a WhatsApp.")
+    st.info("💡 Registra al menos una orden o movimiento el día de hoy para habilitar el botón de envío automático al número 984116361.")
