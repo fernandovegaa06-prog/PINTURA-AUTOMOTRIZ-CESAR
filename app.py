@@ -6,7 +6,7 @@ import urllib.parse
 # Configuración inicial de la página
 st.set_page_config(page_title="Caja Taller Automotriz", page_icon="🚗", layout="centered")
 
-# Estilos CSS
+# Estilos CSS optimizados
 st.markdown("""
     <style>
     .card-ingreso { background-color: #dcfce7; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #22c55e; margin-bottom: 8px; color: #166534; }
@@ -35,40 +35,45 @@ with st.expander("⚙️ Configurar Dinero Inicial / Base"):
         st.session_state.saldo_base = nuevo_saldo
         st.success("¡Saldo base actualizado!")
 
-# --- FORMULARIO DE REGISTRO RÁPIDO ---
+# --- FORMULARIO DE REGISTRO RÁPIDO Y FLUIDO ---
 with st.form("form_registro", clear_on_submit=True):
     st.subheader("Registrar Movimiento")
     
+    # Selector principal de tipo
     tipo = st.selectbox("Tipo de Operación:", [
         "🟢 Ingresos de Pintura / Taller", 
         "🔴 Gastos Materiales y Herramientas", 
         "🟡 Gastos Personales"
-    ])
+    ], key="select_tipo_op")
     
     detalle = ""
+    
+    # 1. Si es Ingreso
     if "Ingresos" in tipo:
         marcas = ["Toyota", "Hyundai", "Nissan", "Chevrolet", "Kia", "Suzuki", "Mazda", "Volkswagen", "Otro"]
         trabajos = ["Pintado Parachoques Delantero", "Pintado Parachoques Trasero", "Pintado de Puerta", "Pintado Capot / Tapa", "Pintura Completa Auto", "Adelanto de Trabajo"]
         
         col_m, col_t = st.columns(2)
         with col_m:
-            m_elegida = st.selectbox("Marca:", marcas)
+            m_elegida = st.selectbox("Marca:", marcas, key="ing_marca")
         with col_t:
-            t_elegido = st.selectbox("Trabajo:", trabajos)
+            t_elegido = st.selectbox("Trabajo:", trabajos, key="ing_trabajo")
             
-        desc_libre = st.text_input("Detalle extra (opcional):")
+        desc_libre = st.text_input("Detalle extra (opcional):", key="ing_extra")
         detalle = f"{t_elegido} ({m_elegida})"
         if desc_libre:
             detalle += f" - {desc_libre}"
 
+    # 2. Si es Gasto de Taller
     elif "Gastos Materiales" in tipo:
         materiales = ["Lijas de agua / seca", "Pintura Poliuretano / Base", "Tiner / Disolvente", "Masilla plástica", "Cinta masking tape / Papel", "Compra de Herramienta"]
-        mat_elegido = st.selectbox("Material / Herramienta:", materiales)
-        desc_libre = st.text_input("Detalle extra (opcional):")
+        mat_elegido = st.selectbox("Material / Herramienta:", materiales, key="mat_select")
+        desc_libre = st.text_input("Detalle extra (opcional):", key="mat_extra")
         detalle = mat_elegido
         if desc_libre:
             detalle += f" - {desc_libre}"
 
+    # 3. Si es Gasto Personal (Sin rastro de marcas de autos)
     else: 
         personales = [
             "Almuerzo", 
@@ -79,13 +84,13 @@ with st.form("form_registro", clear_on_submit=True):
             "Regalos", 
             "Pasajes / Movilidad"
         ]
-        per_elegido = st.selectbox("Categoría Personal:", personales)
-        desc_libre = st.text_input("Detalle extra (opcional):")
+        per_elegido = st.selectbox("Categoría Personal:", personales, key="per_select")
+        desc_libre = st.text_input("Detalle extra (opcional):", key="per_extra")
         detalle = per_elegido
         if desc_libre:
             detalle += f" - {desc_libre}"
 
-    monto = st.number_input("Monto ($):", min_value=0.0, step=1.0, format="%.2f")
+    monto = st.number_input("Monto ($):", min_value=0.0, step=1.0, format="%.2f", key="monto_input")
     
     enviado = st.form_submit_button("Guardar Operación")
     
