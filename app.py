@@ -6,28 +6,24 @@ import urllib.parse
 # Configuración inicial de la página
 st.set_page_config(page_title="Caja Taller Automotriz", page_icon="🚗", layout="centered")
 
-# Estilos CSS con diseño automotriz (Fondo con tarjetas e imágenes de autos)
+# Estilos CSS (Fondo blanco/limPIO y banner automotriz elegante)
 st.markdown("""
     <style>
-    .stApp {
-        background-color: #0f172a;
-        color: #f8fafc;
-    }
     .banner-taller {
-        background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)), url('https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=1000&q=80');
+        background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1000&q=80');
         background-size: cover;
         background-position: center;
-        padding: 25px;
-        border-radius: 15px;
+        padding: 30px;
+        border-radius: 12px;
         text-align: center;
         color: white;
         margin-bottom: 20px;
-        border: 1px solid #334155;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    .card-ingreso { background-color: #064e3b; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #22c55e; margin-bottom: 8px; color: #ecfdf5; }
-    .card-taller { background-color: #7f1d1d; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #ef4444; margin-bottom: 8px; color: #fef2f2; }
-    .card-personal { background-color: #78350f; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #f59e0b; margin-bottom: 8px; color: #fffbeb; }
-    .metric-container { background-color: #1e293b; padding: 15px; border-radius: 15px; color: white; text-align: center; border: 1px solid #334155; }
+    .card-ingreso { background-color: #dcfce7; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #22c55e; margin-bottom: 8px; color: #166534; }
+    .card-taller { background-color: #fee2e2; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #ef4444; margin-bottom: 8px; color: #991b1b; }
+    .card-personal { background-color: #fef3c7; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #f59e0b; margin-bottom: 8px; color: #92400e; }
+    .metric-container { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .btn-whatsapp { display: block; background-color: #25d366; color: white; padding: 12px 20px; border-radius: 10px; text-decoration: none; font-weight: bold; text-align: center; width: 100%; margin-top: 15px; font-size: 1rem; }
     .btn-whatsapp:hover { background-color: #22bf5b; color: white; }
     </style>
@@ -40,11 +36,11 @@ if 'operaciones' not in st.session_state:
 if 'saldo_base' not in st.session_state:
     st.session_state.saldo_base = 0.0
 
-# Banner visual de carros / taller
+# Banner visual de pintura automotriz
 st.markdown("""
     <div class="banner-taller">
-        <h1 style="margin:0; font-size: 1.8rem; color: #38bdf8;">🚗 Taller Automotriz César Beto</h1>
-        <p style="margin:5px 0 0 0; color: #cbd5e1;">Control Financiero Rápido y Profesional</p>
+        <h1 style="margin:0; font-size: 2rem; color: #ffffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">🚗 Taller de Pintura Automotriz César Beto</h1>
+        <p style="margin:5px 0 0 0; color: #e2e8f0; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Control de Caja y Reportes Diarios</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -55,17 +51,12 @@ with st.expander("⚙️ Configurar Dinero Inicial / Base"):
         st.session_state.saldo_base = nuevo_saldo
         st.success("¡Saldo base actualizado!")
 
-# --- FUNCIÓN DE CAMBIO INSTANTÁNEO (EVITA QUE SE QUEDE PEGADO) ---
-def actualizar_tipo():
-    # Esta función limpia al instante cualquier retraso al cambiar de opción
-    pass
-
-# Selector principal fuera de formulario para respuesta inmediata
+# Selector principal de categoría fuera del formulario (cambio ultra rápido sin congelarse)
 tipo = st.selectbox("Tipo de Operación:", [
     "🟢 Ingresos de Pintura / Taller", 
     "🔴 Gastos Materiales y Herramientas", 
     "🟡 Gastos Personales"
-], on_change=actualizar_tipo, key="select_tipo_op_principal")
+], key="select_tipo_op_principal")
 
 st.write("")
 
@@ -152,8 +143,8 @@ saldo_libre = st.session_state.saldo_base + total_ing_g - total_gt_g - total_gp_
 # Panel de Saldo Total
 st.markdown(f"""
     <div class="metric-container">
-        <p style="margin:0; font-size: 0.9rem; color: #94a3b8;">DINERO LIBRE DISPONIBLE</p>
-        <h1 style="margin:5px 0 0 0; color: #38bdf8;">${saldo_libre:.2f}</h1>
+        <p style="margin:0; font-size: 0.9rem; color: #64748b; font-weight: bold;">DINERO LIBRE DISPONIBLE</p>
+        <h1 style="margin:5px 0 0 0; color: #0284c7;">${saldo_libre:.2f}</h1>
     </div>
 """, unsafe_allow_html=True)
 
@@ -168,7 +159,7 @@ mes_actual = datetime.now().strftime("%m/%Y")
 if not df.empty:
     if "Hoy" in filtro_tiempo:
         df_filtrado = df[df['fecha'] == fecha_hoy]
-        st.subheader("📅 Resumen y Historial de Hoy")
+        st.subheader("📅 Resumen e Historial de Hoy")
     else:
         df_filtrado = df[df['mes_anio'] == mes_actual]
         st.subheader("📊 Resumen e Historial del Mes")
@@ -182,7 +173,7 @@ if not df.empty:
 
     st.write("---")
 
-    # --- TARJETAS INDIVIDUALES (CUADROS) ---
+    # --- TARJETAS INDIVIDUALES ---
     for index, row in df_filtrado.iterrows():
         if "Ingresos" in row['tipo']:
             clase = "card-ingreso"
@@ -212,27 +203,32 @@ if not df.empty:
         """, unsafe_allow_html=True)
 
     st.write("---")
-    st.subheader("🖨️ Reportes y Cierre de Día")
+    st.subheader("🖨️ Cuadros y Reportes para Imprimir")
+    st.write("Selecciona una opción para desplegar el cuadro completo en formato tabla listo para copiar o revisar:")
 
+    # Botones de Reporte en Cuadro (Estructura corregida para que muestre el cuadro claramente)
     col_btn1, col_btn2 = st.columns(2)
     
     with col_btn1:
-        if st.button("🖨️ Ver Cuadro del Día"):
-            df_hoy_excel = df[df['fecha'] == fecha_hoy][['fecha', 'tipo', 'detalle', 'monto']]
-            if not df_hoy_excel.empty:
-                st.success("Reporte del Día en formato tabla:")
-                st.dataframe(df_hoy_excel, use_container_width=True)
-            else:
-                st.info("No hay movimientos registrados hoy.")
-
+        ver_cuadro_dia = st.button("📋 Ver Cuadro del Día (Tabla)")
     with col_btn2:
-        if st.button("🖨️ Ver Cuadro del Mes"):
-            df_mes_excel = df[df['mes_anio'] == mes_actual][['fecha', 'tipo', 'detalle', 'monto']]
-            if not df_mes_excel.empty:
-                st.success("Reporte del Mes en formato tabla:")
-                st.dataframe(df_mes_excel, use_container_width=True)
-            else:
-                st.info("No hay movimientos registrados este mes.")
+        ver_cuadro_mes = st.button("📊 Ver Cuadro del Mes (Tabla)")
+
+    if ver_cuadro_dia:
+        st.markdown("### 📋 Cuadro Detallado del Día")
+        df_hoy_tabla = df[df['fecha'] == fecha_hoy][['fecha', 'tipo', 'detalle', 'monto']]
+        if not df_hoy_tabla.empty:
+            st.dataframe(df_hoy_tabla, use_container_width=True)
+        else:
+            st.info("No hay movimientos registrados para el día de hoy.")
+
+    if ver_cuadro_mes:
+        st.markdown("### 📊 Cuadro Detallado del Mes")
+        df_mes_tabla = df[df['mes_anio'] == mes_actual][['fecha', 'tipo', 'detalle', 'monto']]
+        if not df_mes_tabla.empty:
+            st.dataframe(df_mes_tabla, use_container_width=True)
+        else:
+            st.info("No hay movimientos registrados para este mes.")
 
 else:
     st.info("No hay registros todavía. Empieza agregando tus operaciones arriba.")
@@ -267,4 +263,4 @@ if not df_hoy_wa.empty:
         </a>
     ''', unsafe_allow_html=True)
 else:
-    st.info("💡 Registra al menos un ingreso o gasto el día de hoy para habilitar el botón de envío automático a WhatsApp.")
+    st.info("💡 Registra al menos un movimiento el día de hoy para habilitar el botón de envío automático a WhatsApp.")
