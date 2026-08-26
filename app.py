@@ -452,14 +452,10 @@ if not df_hoy_wa.empty:
     f_gastos_hoy = f_gt_hoy + f_gp_hoy
     f_ganancia_hoy = f_ing_hoy - f_gastos_hoy
     
-  msg = "🔒 *CIERRE DE CAJA - TALLER CÉSAR BETO*\n"
+    msg = "🔒 *CIERRE DE CAJA - TALLER CÉSAR BETO*\n"
     msg += f"📅 *Fecha:* {fecha_hoy}\n\n"
     msg += f"🟢 *Total Ingresos (Autos):* ${f_ing_hoy:.2f}\n"
     msg += f"🔴 *Total Gastos (Taller/Personal):* ${f_gastos_hoy:.2f}\n"
     msg += f"💰 *Ganancia Neta (Libre):* ${f_ganancia_hoy:.2f}\n\n"
     msg += "Efectivo actual en caja: $" + f"{efectivo_actual:.2f}\n"
-    msg += "Digital actual (Yape/Banco): $" + f"{digital_actual:.2f}\n"
-    msg += "Dinero Total Disponible: $" + f"{saldo_total_libre:.2f}\n\n"
-    msg += "📋 *Detalle de lo que se hizo hoy:*\n"
-    
-    
+    msg += "Digital actual (Y
