@@ -75,11 +75,11 @@ if 'digital_base' not in st.session_state:
 st.markdown("""
     <div class="banner-taller">
         <h1 style="margin:0; font-size: 2rem; color: #ffffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">🚗 Taller de Pintura Automotriz César Beto</h1>
-        <p style="margin:5px 0 0 0; color: #e2e8f0; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Control de Caja y Movimientos</p>
+        <p style="margin:5px 0 0 0; color: #e2e8f0; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Control de Caja, Historial Diario y Reportes</p>
     </div>
 """, unsafe_allow_html=True)
 
-with st.expander("⚙️ Configurar Dinero Inicial en Caja (Efectivo y Digital)"):
+with st.expander("⚙️ Configurar Dinero Inicial en Caja"):
     col_eb, col_db = st.columns(2)
     with col_eb:
         nuevo_efectivo = st.number_input("Base en Efectivo ($ / S/):", value=st.session_state.efectivo_base, step=10.0)
@@ -186,13 +186,14 @@ efectivo_actual = st.session_state.efectivo_base + efectivo_neto_movs
 digital_actual = st.session_state.digital_base + digital_neto_movs
 saldo_total_libre = efectivo_actual + digital_actual
 
-st.markdown("### 📈 Resumen Financiero Total")
+# 📊 CUADROS DE RESUMEN GENERAL
+st.markdown("### 📈 Cuadro General Financiero")
 col_g1, col_g2 = st.columns(2)
 with col_g1:
-    st.metric("🟢 Cobros de Órdenes (Autos)", f"${total_ingresos:.2f}")
-    st.metric("🔴 Gasto Total Insumos Taller", f"${total_gastos_taller:.2f}")
+    st.metric("🟢 Total Ingresos (Autos)", f"${total_ingresos:.2f}")
+    st.metric("🔴 Total Gastos Taller", f"${total_gastos_taller:.2f}")
 with col_g2:
-    st.metric("🟡 Gasto Total Personal", f"${total_gastos_personal:.2f}")
+    st.metric("🟡 Total Gastos Personales", f"${total_gastos_personal:.2f}")
     st.metric("💰 Ganancia Neta Real", f"${ganancia_neta:.2f}")
 
 st.markdown(f"""
@@ -207,17 +208,22 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.write("")
-filtro_tiempo = st.radio("Seleccionar Vista:", ["📅 Ver Hoy", "📊 Ver Todo el Mes"], horizontal=True)
+
+# 📅 HISTORIAL POR DÍA Y VISTAS
+filtro_tiempo = st.radio("Seleccionar Historial:", ["📅 Ver Historial de Hoy", "📊 Ver Historial del Mes", "📋 Ver Todo el Historial"], horizontal=True)
 fecha_hoy = datetime.now().strftime("%d/%m/%Y")
 mes_actual = datetime.now().strftime("%m/%Y")
 
 if not df.empty and 'fecha' in df.columns:
     if "Hoy" in filtro_tiempo:
         df_filtrado = df[df['fecha'] == fecha_hoy]
-        st.subheader("📅 Resumen e Historial de Hoy")
-    else:
+        st.subheader("📅 Historial y Trabajos de Hoy")
+    elif "Mes" in filtro_tiempo:
         df_filtrado = df[df['mes_anio'] == mes_actual] if 'mes_anio' in df.columns else df
-        st.subheader("📊 Resumen e Historial del Mes")
+        st.subheader("📊 Historial del Mes")
+    else:
+        df_filtrado = df
+        st.subheader("📋 Historial Completo de Todos los Días")
 
     f_ingresos = df_filtrado[df_filtrado['tipo'].str.contains("Orden de Trabajo", na=False)]['monto'].sum() if not df_filtrado.empty else 0
     f_g_taller = df_filtrado[df_filtrado['tipo'].str.contains("Materiales", na=False)]['monto'].sum() if not df_filtrado.empty else 0
@@ -225,11 +231,13 @@ if not df.empty and 'fecha' in df.columns:
     f_ganancia_periodo = f_ingresos - (f_g_taller + f_g_personal)
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Ingresos Periodo", f"${f_ingresos:.2f}")
-    col2.metric("Gastos Periodo", f"${(f_g_taller + f_g_personal):.2f}")
-    col3.metric("Ganancia Periodo", f"${f_ganancia_periodo:.2f}")
+    col1.metric("Ingresos en este bloque", f"${f_ingresos:.2f}")
+    col2.metric("Gastos en este bloque", f"${(f_g_taller + f_g_personal):.2f}")
+    col3.metric("Ganancia del bloque", f"${f_ganancia_periodo:.2f}")
 
     st.write("---")
+    
+    # Renderizado en tarjetas limpias tipo cuadro
     for index, row in df_filtrado.iterrows():
         t_val = str(row.get('tipo', ''))
         if "Orden de Trabajo" in t_val:
@@ -245,7 +253,7 @@ if not df.empty and 'fecha' in df.columns:
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <strong>{row.get('detalle', '')}</strong><br>
-                        <small><b>{cat}</b> ({medio_icono} {row.get('medio', '')}) | {row.get('fecha', '')}</small>
+                        <small><b>{cat}</b> ({medio_icono} {row.get('medio', '')}) | 📅 <b>{row.get('fecha', '')}</b></small>
                     </div>
                     <div style="font-size: 1.1rem; font-weight: bold;">
                         {signo}${float(row.get('monto', 0)):.2f}
@@ -255,7 +263,7 @@ if not df.empty and 'fecha' in df.columns:
         """, unsafe_allow_html=True)
 
     st.write("---")
-    st.subheader("🖨️ Descarga de Reporte Completo en Excel")
+    st.subheader("🖨️ Descargar Cuadro Completo en Excel")
     output = io.BytesIO()
     try:
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -269,16 +277,17 @@ if not df.empty and 'fecha' in df.columns:
             df_resumen_dl.to_excel(writer, sheet_name="Resumen_Financiero", index=False)
         processed_data = output.getvalue()
         st.download_button(
-            label="📥 Descargar Excel con Resumen y Ganancia Total",
+            label="📥 Descargar Excel con Todo el Historial",
             data=processed_data,
             file_name="Reporte_Financiero_Taller.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     except Exception:
-        st.warning("⚠️ Asegúrate de incluir 'openpyxl' en tu archivo requirements.txt en GitHub.")
+        st.warning("⚠️ Asegúrate de incluir 'openpyxl' en tu archivo requirements.txt.")
 else:
-    st.info("No hay registros todavía. Todo está en cero listo para empezar.")
+    st.info("No hay registros todavía. Todo está listo para empezar a registrar.")
 
+# ⚙️ ADMINISTRAR Y CORREGIR
 st.write("---")
 st.markdown("""
     <div class="admin-box">
@@ -299,10 +308,11 @@ if not df.empty and 'fecha' in df.columns and 'detalle' in df.columns:
 else:
     st.info("No hay registros para corregir.")
 
+# 🔒 CIERRE DE CAJA Y ENVÍO A WHATSAPP
 st.write("---")
 st.markdown("""
     <div class="cierre-box">
-        <h3 style="margin-top:0; color: #0284c7;">🔒 Cierre de Caja y Envío a WhatsApp</h3>
+        <h3 style="margin-top:0; color: #0284c7;">🔒 Cierre de Caja Diario y Envío a WhatsApp</h3>
         <p style="color: #334155; font-size: 0.95rem;">Elige a qué número de celular deseas enviar el reporte del cierre de caja:</p>
     </div>
 """, unsafe_allow_html=True)
@@ -322,7 +332,7 @@ if not df_hoy_wa.empty:
     f_gastos_hoy = f_gt_hoy + f_gp_hoy
     f_ganancia_hoy = f_ing_hoy - f_gastos_hoy
     
-    msg = "🔒 *CIERRE DE CAJA - TALLER CÉSAR BETO*\n"
+    msg = "🔒 *CIERRE DE CAJA DIARIO - TALLER CÉSAR BETO*\n"
     msg += "📅 Fecha: " + fecha_hoy + "\n\n"
     msg += "🟢 Total Ingresos (Autos): $" + f"{f_ing_hoy:.2f}\n"
     msg += "🔴 Total Gastos: $" + f"{f_gastos_hoy:.2f}\n"
@@ -342,7 +352,7 @@ if not df_hoy_wa.empty:
     
     st.markdown(f'''
         <a href="{url_whatsapp}" target="_blank" class="btn-whatsapp">
-            💬 Enviar Cierre al WhatsApp seleccionado ({telefono_destino})
+            💬 Enviar Cierre de Hoy al WhatsApp seleccionado ({telefono_destino})
         </a>
     ''', unsafe_allow_html=True)
 else:
