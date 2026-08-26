@@ -3,17 +3,18 @@ import pandas as pd
 from datetime import datetime
 import urllib.parse
 import os
+import io
 
 # Configuración inicial de la página
 st.set_page_config(page_title="Caja Taller Automotriz César Beto", page_icon="🚗", layout="centered")
 
 RUTA_ARCHIVO = "taller_datos.xlsx"
 
-# --- FUNCIONES DE CARGA Y GUARDADO EN EXCEL (EN CEROS SI NO EXISTE) ---
+# --- FUNCIONES DE CARGA Y GUARDADO EN EXCEL ---
 def cargar_datos_excel():
     if os.path.exists(RUTA_ARCHIVO):
         try:
-            df_existente = pd.read_excel(RUTA_ARCHIVO)
+            df_existente = pd.read_excel(RUTA_ARCHIVO, sheet_name="Operaciones")
             if df_existente.empty:
                 return []
             operaciones = []
@@ -32,11 +33,38 @@ def cargar_datos_excel():
     else:
         return []
 
-def guardar_datos_excel(lista_operaciones):
+def guardar_datos_excel(lista_operaciones, total_ing, total_g_taller, total_g_pers, ganancia_neta, saldo_total):
     try:
-        df = pd.DataFrame(lista_operaciones)
-        df.columns = ["Fecha", "MesAnio", "Tipo", "Detalle", "Medio", "Monto"]
-        df.to_excel(RUTA_ARCHIVO, index=False)
+        with pd.ExcelWriter(RUTA_ARCHIVO, engine='openpyxl') as writer:
+            # Hoja 1: Operaciones
+            df_ops = pd.DataFrame(lista_operaciones)
+            if not df_ops.empty:
+                df_ops.columns = ["Fecha", "MesAnio", "Tipo", "Detalle", "Medio", "Monto"]
+            else:
+                df_ops = pd.DataFrame(columns=["Fecha", "MesAnio", "Tipo", "Detalle", "Medio", "Monto"])
+            df_ops.to_excel(writer, sheet_name="Operaciones", index=False)
+            
+            # Hoja 2: Resumen Financiero
+            df_resumen = pd.DataFrame({
+                "Concepto": [
+                    "Total Ingresos (Cobros Autos)", 
+                    "Total Gastos Insumos Taller", 
+                    "Total Gastos Personales", 
+                    "Gasto Total General", 
+                    "Ganancia Neta Real", 
+                    "Dinero Disponible Total (Caja y Banco)"
+                ],
+                "Monto ($ / S/)": [
+                    total_ing, 
+                    total_g_taller, 
+                    total_g_pers, 
+                    total_g_taller + total_g_pers, 
+                    ganancia_neta, 
+                    saldo_total
+                ]
+            })
+            df_resumen.to_excel(writer, sheet_name="Resumen_Financiero", index=False)
+            
     except Exception as e:
         st.error(f"Error al guardar en el archivo de Excel: {e}")
 
@@ -65,7 +93,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Inicializar Base de Datos en vacía (0 registros al iniciar)
+# Inicializar Base de Datos en vacía
 if 'operaciones' not in st.session_state:
     st.session_state.operaciones = cargar_datos_excel()
 
@@ -166,11 +194,22 @@ with st.form("form_registro", clear_on_submit=True):
                 "monto": monto
             }
             st.session_state.operaciones.insert(0, nueva_op)
-            guardar_datos_excel(st.session_state.operaciones)
+            
+            # Recalcular preliminar para guardar excel completo
+            df_temp = pd.DataFrame(st.session_state.operaciones)
+            ti = df_temp[df_temp['tipo'].str.contains("Orden de Trabajo")]['monto'].sum() if not df_temp.empty else 0
+            tgt = df_temp[df_temp['tipo'].str.contains("Gastos Materiales")]['monto'].sum() if not df_temp.empty else 0
+            tgp = df_temp[df_temp['tipo'].str.contains("Gastos Personales")]['monto'].sum() if not df_temp.empty else 0
+            gn = ti - (tgt + tgp)
+            ef_m = sum([float(r['monto']) if "Orden de Trabajo" in r['tipo'] else -float(r['monto']) for _, r in df_temp.iterrows() if "Efectivo" in r['medio']]) if not df_temp.empty else 0
+            dg_m = sum([float(r['monto']) if "Orden de Trabajo" in r['tipo'] else -float(r['monto']) for _, r in df_temp.iterrows() if "Digital" in r['medio']]) if not df_temp.empty else 0
+            st_tot = (st.session_state.efectivo_base + ef_m) + (st.session_state.digital_base + dg_m)
+            
+            guardar_datos_excel(st.session_state.operaciones, ti, tgt, tgp, gn, st_tot)
             st.success("¡Guardado exitosamente!")
             st.rerun()
 
-# Cálculos
+# Cálculos Generales
 df = pd.DataFrame(st.session_state.operaciones)
 total_ingresos, total_gastos_taller, total_gastos_personal = 0.0, 0.0, 0.0
 efectivo_neto_movs, digital_neto_movs = 0.0, 0.0
@@ -266,28 +305,27 @@ if not df.empty:
         """, unsafe_allow_html=True)
 
     st.write("---")
-    st.subheader("🖨️ Tablas y Reportes Detallados")
-    col_btn1, col_btn2 = st.columns(2)
-    with col_btn1:
-        ver_cuadro_dia = st.button("📋 Ver Cuadro del Día (Tabla)")
-    with col_btn2:
-        ver_cuadro_mes = st.button("📊 Ver Cuadro del Mes (Tabla)")
-
-    if ver_cuadro_dia:
-        st.markdown("### 📋 Cuadro Detallado del Día")
-        df_hoy_tabla = df[df['fecha'] == fecha_hoy][['fecha', 'tipo', 'detalle', 'medio', 'monto']]
-        if not df_hoy_tabla.empty:
-            st.dataframe(df_hoy_tabla, use_container_width=True)
-        else:
-            st.info("No hay movimientos registrados hoy.")
-
-    if ver_cuadro_mes:
-        st.markdown("### 📊 Cuadro Detallado del Mes")
-        df_mes_tabla = df[df['mes_anio'] == mes_actual][['fecha', 'tipo', 'detalle', 'medio', 'monto']]
-        if not df_mes_tabla.empty:
-            st.dataframe(df_mes_tabla, use_container_width=True)
-        else:
-            st.info("No hay movimientos este mes.")
+    st.subheader("🖨️ Descarga de Reporte Completo en Excel")
+    
+    # Botón para descargar Excel con Resumen y Operaciones
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.columns = ["Fecha", "MesAnio", "Tipo", "Detalle", "Medio", "Monto"]
+        df.to_excel(writer, sheet_name="Operaciones", index=False)
+        
+        df_resumen_dl = pd.DataFrame({
+            "Concepto": ["Total Ingresos", "Total Gastos Taller", "Total Gastos Personal", "Gasto Total General", "Ganancia Neta Real", "Dinero Disponible Total"],
+            "Monto ($ / S/)": [total_ingresos, total_gastos_taller, total_gastos_personal, total_gastos_general, ganancia_neta, saldo_total_libre]
+        })
+        df_resumen_dl.to_excel(writer, sheet_name="Resumen_Financiero", index=False)
+    
+    processed_data = output.getvalue()
+    st.download_button(
+        label="📥 Descargar Excel con Resumen y Ganancia Total",
+        data=processed_data,
+        file_name="Reporte_Financiero_Taller.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 else:
     st.info("No hay registros todavía. Todo está en cero listo para empezar.")
@@ -307,20 +345,28 @@ if not df.empty:
     
     if st.button("🗑️ Eliminar Registro", type="primary"):
         st.session_state.operaciones.pop(seleccion_a_borrar)
-        guardar_datos_excel(st.session_state.operaciones)
+        guardar_datos_excel(st.session_state.operaciones, total_ingresos, total_gastos_taller, total_gastos_personal, ganancia_neta, saldo_total_libre)
         st.success("¡Registro eliminado correctamente!")
         st.rerun()
 else:
     st.info("No hay registros para corregir.")
 
-# Cierre de Caja y WhatsApp
+# Cierre de Caja y WhatsApp para ambos números
 st.write("---")
 st.markdown("""
     <div class="cierre-box">
-        <h3 style="margin-top:0; color: #0284c7;">🔒 Cierre de Caja y Envío a WhatsApp (984116361)</h3>
-        <p style="color: #334155; font-size: 0.95rem;">Revisa el reporte del día listo para enviarlo a WhatsApp.</p>
+        <h3 style="margin-top:0; color: #0284c7;">🔒 Cierre de Caja y Envío a WhatsApp</h3>
+        <p style="color: #334155; font-size: 0.95rem;">Elige a qué número de celular deseas enviar el reporte del cierre de caja:</p>
     </div>
 """, unsafe_allow_html=True)
+
+# Selector de número de WhatsApp
+numero_elegido = st.radio("Enviar reporte al número de:", [
+    "📱 César 1: +51 984 116 361", 
+    "📱 César 2 (+51 951 290 168): +51 951 290 168"
+], horizontal=True)
+
+telefono_destino = "51984116361" if "984" in numero_elegido else "51951290168"
 
 df_hoy_wa = df[df['fecha'] == fecha_hoy] if not df.empty else pd.DataFrame()
 
@@ -347,11 +393,11 @@ if not df_hoy_wa.empty:
         msg += "• " + str(row['detalle']) + " (" + medio_txt + "): " + signo + "$" + f"{float(row['monto']):.2f}\n"
     
     mensaje_codificado = urllib.parse.quote(msg)
-    url_whatsapp = "https://api.whatsapp.com/send?phone=51984116361&text=" + mensaje_codificado
+    url_whatsapp = f"https://api.whatsapp.com/send?phone={telefono_destino}&text=" + mensaje_codificado
     
     st.markdown(f'''
         <a href="{url_whatsapp}" target="_blank" class="btn-whatsapp">
-            💬 Enviar Cierre de Caja a mi WhatsApp (984116361)
+            💬 Enviar Cierre al WhatsApp seleccionado ({telefono_destino})
         </a>
     ''', unsafe_allow_html=True)
 else:
