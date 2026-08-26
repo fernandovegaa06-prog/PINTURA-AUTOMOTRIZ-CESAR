@@ -79,16 +79,31 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-with st.expander("⚙️ Configurar Dinero Inicial en Caja"):
+with st.expander("⚙️ Configurar Dinero Inicial y Reseteo"):
     col_eb, col_db = st.columns(2)
     with col_eb:
         nuevo_efectivo = st.number_input("Base en Efectivo ($ / S/):", value=st.session_state.efectivo_base, step=10.0)
     with col_db:
         nuevo_digital = st.number_input("Base Digital / Yape ($ / S/):", value=st.session_state.digital_base, step=10.0)
+    
     if st.button("Fijar Saldos Base"):
         st.session_state.efectivo_base = nuevo_efectivo
         st.session_state.digital_base = nuevo_digital
         st.success("¡Saldos iniciales actualizados correctamente!")
+        
+    st.markdown("---")
+    st.markdown("#### ⚠️ Zona de Peligro / Borrado Total")
+    if st.button("🔄 RESETEAR TODO (Borrar Historial y Dejar en Cero)", type="primary"):
+        st.session_state.operaciones = []
+        st.session_state.efectivo_base = 0.0
+        st.session_state.digital_base = 0.0
+        if os.path.exists(RUTA_ARCHIVO):
+            try:
+                os.remove(RUTA_ARCHIVO)
+            except Exception:
+                pass
+        st.success("¡Se ha reseteado la caja por completo!")
+        st.rerun()
 
 tipo = st.selectbox("Seleccione qué desea registrar:", [
     "🚙 Orden de Trabajo / Cobro por Auto (Ingreso)", 
@@ -133,7 +148,6 @@ with st.form("form_registro", clear_on_submit=True):
 
     col_monto, col_medio = st.columns(2)
     with col_monto:
-        # Configurado estrictamente en 0.0 para que no arranque con ningún número predeterminado
         monto = st.number_input("Monto Total ($ / S/):", min_value=0.0, value=0.0, step=1.0, format="%.2f")
     with col_medio:
         medio_pago = st.selectbox("Medio de Pago / Cobro:", ["Efectivo", "Digital (Yape / Banco)"])
@@ -354,6 +368,4 @@ if not df_hoy_wa.empty:
         <a href="{url_whatsapp}" target="_blank" class="btn-whatsapp">
             💬 Enviar Cierre de Hoy al WhatsApp seleccionado ({telefono_destino})
         </a>
-    ''', unsafe_allow_html=True)
-else:
-    st.info("💡 Registra al menos una orden o movimiento el día de hoy para habilitar el Cierre de Caja y el envío a WhatsApp.")
+    ''', un
