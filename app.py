@@ -133,7 +133,8 @@ with st.form("form_registro", clear_on_submit=True):
 
     col_monto, col_medio = st.columns(2)
     with col_monto:
-        monto = st.number_input("Monto Total ($ / S/):", min_value=0.0, step=1.0, format="%.2f")
+        # Configurado estrictamente en 0.0 para que no arranque con ningún número predeterminado
+        monto = st.number_input("Monto Total ($ / S/):", min_value=0.0, value=0.0, step=1.0, format="%.2f")
     with col_medio:
         medio_pago = st.selectbox("Medio de Pago / Cobro:", ["Efectivo", "Digital (Yape / Banco)"])
     
@@ -186,7 +187,7 @@ efectivo_actual = st.session_state.efectivo_base + efectivo_neto_movs
 digital_actual = st.session_state.digital_base + digital_neto_movs
 saldo_total_libre = efectivo_actual + digital_actual
 
-# 📊 CUADROS DE RESUMEN GENERAL
+# 📈 CUADROS DE RESUMEN GENERAL
 st.markdown("### 📈 Cuadro General Financiero")
 col_g1, col_g2 = st.columns(2)
 with col_g1:
@@ -237,7 +238,6 @@ if not df.empty and 'fecha' in df.columns:
 
     st.write("---")
     
-    # Renderizado en tarjetas limpias tipo cuadro
     for index, row in df_filtrado.iterrows():
         t_val = str(row.get('tipo', ''))
         if "Orden de Trabajo" in t_val:
