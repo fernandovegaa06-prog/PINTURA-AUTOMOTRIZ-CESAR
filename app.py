@@ -29,12 +29,12 @@ def generar_datos_mes_completo():
         fecha_str = dia_pasado.strftime("%d/%m/%Y")
         mes_anio_str = dia_pasado.strftime("%m/%Y")
         
-        # Simular ingresos por autos (algunos días sí, otros no)
+        # Simular ingresos por autos
         if i % 2 == 0:
             marca = marcas[i % len(marcas)]
             trabajo = trabajos[i % len(trabajos)]
             monto_auto = float(120 + (i * 15) % 300)
-            medio = "📱 Digital (Yape / Banco)" if i % 3 == 0 else "💵 Efectivo"
+            medio = "Digital (Yape / Banco)" if i % 3 == 0 else "Efectivo"
             datos.append({
                 "fecha": fecha_str,
                 "mes_anio": mes_anio_str,
@@ -52,7 +52,7 @@ def generar_datos_mes_completo():
                 "mes_anio": mes_anio_str,
                 "tipo": "🔴 Gastos Materiales y Herramientas (Taller)",
                 "detalle": material,
-                "medio": "💵 Efectivo",
+                "medio": "Efectivo",
                 "monto": float(30 + (i * 5) % 70)
             })
             
@@ -63,7 +63,7 @@ def generar_datos_mes_completo():
             "mes_anio": mes_anio_str,
             "tipo": "🟡 Gastos Personales",
             "detalle": gasto_per,
-            "medio": "💵 Efectivo",
+            "medio": "Efectivo",
             "monto": float(15 + (i * 2) % 25)
         })
         
@@ -141,7 +141,7 @@ if 'digital_base' not in st.session_state:
 st.markdown("""
     <div class="banner-taller">
         <h1 style="margin:0; font-size: 2rem; color: #ffffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">🚗 Taller de Pintura Automotriz César Beto</h1>
-        <p style="margin:5px 0 0 0; color: #e2e8f0; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Historial Completo de 30 Días en la Nube / Local</p>
+        <p style="margin:5px 0 0 0; color: #e2e8f0; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Historial Completo de 30 Días</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -232,7 +232,7 @@ with st.form("form_registro", clear_on_submit=True):
     with col_monto:
         monto = st.number_input("Monto Total ($ / S/):", min_value=0.0, step=1.0, format="%.2f")
     with col_medio:
-        medio_pago = st.selectbox("Medio de Pago / Cobro:", ["💵 Efectivo", "📱 Digital (Yape / Banco)"])
+        medio_pago = st.selectbox("Medio de Pago / Cobro:", ["Efectivo", "Digital (Yape / Banco)"])
     
     enviado = st.form_submit_button("Guardar Registro")
     
@@ -452,9 +452,10 @@ if not df_hoy_wa.empty:
     f_gastos_hoy = f_gt_hoy + f_gp_hoy
     f_ganancia_hoy = f_ing_hoy - f_gastos_hoy
     
-    msg = f"🔒 *CIERRE DE CAJA - TALLER CÉSAR BETO*\n"
+    msg = "🔒 *CIERRE DE CAJA - TALLER CÉSAR BETO*\n"
     msg += f"📅 *Fecha:* {fecha_hoy}\n\n"
     msg += f"🟢 *Total Ingresos (Autos):* ${f_ing_hoy:.2f}\n"
     msg += f"🔴 *Total Gastos (Taller/Personal):* ${f_gastos_hoy:.2f}\n"
     msg += f"💰 *Ganancia Neta (Libre):* ${f_ganancia_hoy:.2f}\n\n"
-    msg += f"💵 *Efectivo actual"
+    msg += f"Efectivo actual en caja: ${efectivo_actual:.2f}\n"
+    msg += f"Digital actual (Yape/
