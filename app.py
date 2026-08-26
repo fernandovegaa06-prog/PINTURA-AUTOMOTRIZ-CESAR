@@ -462,7 +462,4 @@ if not df_hoy_wa.empty:
     msg += "Dinero Total Disponible: $" + f"{saldo_total_libre:.2f}\n\n"
     msg += "📋 *Detalle de lo que se hizo hoy:*\n"
     
-    for index, row in df_hoy_wa.iterrows():
-        signo = "+" if "Orden de Trabajo" in str(row['tipo']) else "-"
-        medio_txt = "Efectivo" if "Efectivo" in str(row['medio']) else "Digital"
-        msg += f"• {row['detalle']} ({medio_txt}): {signo}${float(row['monto']):.2f}\n"
+    
