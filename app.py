@@ -20,7 +20,7 @@ st.markdown("""
         margin-bottom: 20px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    .card-ingreso { background-color: #dcfce7; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #22c55e; margin-bottom: 8px; color: #166534; }
+    .card-orden { background-color: #f0fdf4; padding: 12px 16px; border-radius: 10px; border-left: 5px solid #22c55e; margin-bottom: 10px; color: #166534; }
     .card-taller { background-color: #fee2e2; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #ef4444; margin-bottom: 8px; color: #991b1b; }
     .card-personal { background-color: #fef3c7; padding: 10px 14px; border-radius: 10px; border-left: 5px solid #f59e0b; margin-bottom: 8px; color: #92400e; }
     .metric-container { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
@@ -43,7 +43,7 @@ if 'digital_base' not in st.session_state:
 st.markdown("""
     <div class="banner-taller">
         <h1 style="margin:0; font-size: 2rem; color: #ffffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">🚗 Taller de Pintura Automotriz César Beto</h1>
-        <p style="margin:5px 0 0 0; color: #e2e8f0; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Control de Caja, Efectivo y Digital</p>
+        <p style="margin:5px 0 0 0; color: #e2e8f0; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Control de Caja por Órdenes de Autos y Gastos</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -60,10 +60,10 @@ with st.expander("⚙️ Configurar Dinero Inicial (Efectivo y Digital)"):
         st.session_state.digital_base = nuevo_digital
         st.success("¡Saldos iniciales actualizados correctamente!")
 
-# Selector principal de categoría fuera del formulario (cambio ultra rápido sin congelarse)
-tipo = st.selectbox("Tipo de Operación:", [
-    "🟢 Ingresos de Pintura / Taller", 
-    "🔴 Gastos Materiales y Herramientas", 
+# Selector principal de qué tipo de registro vas a hacer
+tipo = st.selectbox("Seleccione qué desea registrar:", [
+    "🚙 Orden de Trabajo / Cobro por Auto (Ingreso)", 
+    "🔴 Gastos Materiales y Herramientas (Taller)", 
     "🟡 Gastos Personales"
 ], key="select_tipo_op_principal")
 
@@ -73,8 +73,9 @@ st.write("")
 with st.form("form_registro", clear_on_submit=True):
     detalle = ""
     
-    # 1. Si es Ingreso (Ampliando marcas y trabajos detallados)
-    if "Ingresos" in tipo:
+    # 1. ORDEN DE TRABAJO POR AUTO (Estructura de boleta / cobro global de mano de obra + materiales internos)
+    if "Orden de Trabajo" in tipo:
+        st.markdown("### 🚙 Detalle de la Orden del Vehículo")
         marcas = [
             "Toyota", "Hyundai", "Nissan", "Chevrolet", "Kia", "Suzuki", 
             "Mazda", "Volkswagen", "Renault", "Chery", "Subaru", "Mitsubishi", "Honda", "Otro"
@@ -91,23 +92,27 @@ with st.form("form_registro", clear_on_submit=True):
             "Pintura Completa Auto", 
             "Pulido y Lijado General", 
             "Pulido de Faros",
-            "Enderezado y Pintura",
-            "Adelanto de Trabajo"
+            "Enderezado y Pintura Completa",
+            "Adelanto / Cuenta de Trabajo"
         ]
         
-        col_m, col_t = st.columns(2)
+        col_m, col_placa = st.columns(2)
         with col_m:
             m_elegida = st.selectbox("Marca del Auto:", marcas)
-        with col_t:
-            t_elegido = st.selectbox("Trabajo Realizado:", trabajos)
+        with col_placa:
+            placa_auto = st.text_input("Placa / N° de Orden (Ej: ABC-123 o Boleta 001):")
             
-        desc_libre = st.text_input("Detalle extra (Ej: Color rojo perlado, placa...):")
-        detalle = f"{t_elegido} ({m_elegida})"
-        if desc_libre:
-            detalle += f" - {desc_libre}"
+        t_elegido = st.selectbox("Trabajos realizados en este vehículo:", trabajos)
+        observaciones_auto = st.text_input("Notas (Ej: Incluye material, pintura y mano de obra):")
+        
+        # Armar un detalle súper ordenado tipo boleta
+        detalle = f"Auto: {m_elegida} | Placa/Ref: {placa_auto if placa_auto else 'S/N'} | Trabajo: {t_elegido}"
+        if observaciones_auto:
+            detalle += f" | Nota: {observaciones_auto}"
 
-    # 2. Si es Gasto de Taller (Ampliando materiales e insumos de pintura)
+    # 2. GASTOS DE TALLER (Materiales sueltos que compras para stock o uso general)
     elif "Gastos Materiales" in tipo:
+        st.markdown("### 🔴 Gasto de Insumos / Taller")
         materiales = [
             "Lijas de agua (Grano fino/medio)", 
             "Lijas secas / lija de fierro", 
@@ -130,8 +135,9 @@ with st.form("form_registro", clear_on_submit=True):
         if desc_libre:
             detalle += f" - {desc_libre}"
 
-    # 3. Si es Gasto Personal (Ampliando opciones del día a dia)
+    # 3. GASTOS PERSONALES
     else: 
+        st.markdown("### 🟡 Gasto Personal")
         personales = [
             "Almuerzo", 
             "Desayuno", 
@@ -153,11 +159,11 @@ with st.form("form_registro", clear_on_submit=True):
 
     col_monto, col_medio = st.columns(2)
     with col_monto:
-        monto = st.number_input("Monto ($ / S/):", min_value=0.0, step=1.0, format="%.2f")
+        monto = st.number_input("Monto Total ($ / S/):", min_value=0.0, step=1.0, format="%.2f")
     with col_medio:
         medio_pago = st.selectbox("Medio de Pago / Cobro:", ["💵 Efectivo", "📱 Digital (Yape / Banco)"])
     
-    enviado = st.form_submit_button("Guardar Operación")
+    enviado = st.form_submit_button("Guardar Registro")
     
     if enviado:
         if monto <= 0:
@@ -173,7 +179,7 @@ with st.form("form_registro", clear_on_submit=True):
                 "mes_anio": now.strftime("%m/%Y")
             }
             st.session_state.operaciones.insert(0, nueva_op)
-            st.success("¡Guardado con éxito!")
+            st.success("¡Guardado ordenadamente con éxito!")
             st.rerun()
 
 # --- CÁLCULOS FINANCIEROS GLOBALES Y POR MEDIO ---
@@ -187,12 +193,12 @@ efectivo_neto_movs = 0.0
 digital_neto_movs = 0.0
 
 if not df.empty:
-    total_ingresos = df[df['tipo'].str.contains("Ingresos")]['monto'].sum()
-    total_gastos_taller = df[df['tipo'].str.contains("Materiales")]['monto'].sum()
+    total_ingresos = df[df['tipo'].str.contains("Orden de Trabajo")]['monto'].sum()
+    total_gastos_taller = df[df['tipo'].str.contains("Gastos Materiales")]['monto'].sum()
     total_gastos_personal = df[df['tipo'].str.contains("Gastos Personales")]['monto'].sum()
 
     for _, row in df.iterrows():
-        es_ingreso = "Ingresos" in row['tipo']
+        es_ingreso = "Orden de Trabajo" in row['tipo']
         valor = row['monto'] if es_ingreso else -row['monto']
         
         if "Efectivo" in row['medio']:
@@ -211,8 +217,8 @@ saldo_total_libre = efectivo_actual + digital_actual
 st.markdown("### 📈 Resumen Financiero Total")
 col_g1, col_g2 = st.columns(2)
 with col_g1:
-    st.metric("🟢 Ingreso Total", f"${total_ingresos:.2f}")
-    st.metric("🔴 Gasto Total Taller", f"${total_gastos_taller:.2f}")
+    st.metric("🟢 Cobros de Órdenes (Autos)", f"${total_ingresos:.2f}")
+    st.metric("🔴 Gasto Total Insumos Taller", f"${total_gastos_taller:.2f}")
 with col_g2:
     st.metric("🟡 Gasto Total Personal", f"${total_gastos_personal:.2f}")
     st.metric("💰 Ganancia Neta Real", f"${ganancia_neta:.2f}")
@@ -245,7 +251,7 @@ if not df.empty:
         df_filtrado = df[df['mes_anio'] == mes_actual]
         st.subheader("📊 Resumen e Historial del Mes")
 
-    f_ingresos = df_filtrado[df_filtrado['tipo'].str.contains("Ingresos")]['monto'].sum()
+    f_ingresos = df_filtrado[df_filtrado['tipo'].str.contains("Orden de Trabajo")]['monto'].sum()
     f_gastos = df_filtrado[df_filtrado['tipo'].str.contains("Gastos|Materiales", regex=True)]['monto'].sum()
 
     col1, col2 = st.columns(2)
@@ -256,18 +262,18 @@ if not df.empty:
 
     # --- TARJETAS INDIVIDUALES ---
     for index, row in df_filtrado.iterrows():
-        if "Ingresos" in row['tipo']:
-            clase = "card-ingreso"
+        if "Orden de Trabajo" in row['tipo']:
+            clase = "card-orden"
             signo = "+"
-            cat = "Ingreso Taller"
+            cat = "🚗 Orden de Auto"
         elif "Materiales" in row['tipo']:
             clase = "card-taller"
             signo = "-"
-            cat = "Gasto Taller"
+            cat = "🔴 Insumo Taller"
         else:
             clase = "card-personal"
             signo = "-"
-            cat = "Gasto Personal"
+            cat = "🟡 Gasto Personal"
 
         medio_icono = "💵" if "Efectivo" in row['medio'] else "📱"
 
@@ -287,7 +293,7 @@ if not df.empty:
 
     st.write("---")
     st.subheader("🖨️ Cuadros y Reportes para Imprimir")
-    st.write("Selecciona una opción para desplegar el cuadro completo en formato tabla listo para copiar o revisar:")
+    st.write("Selecciona una opción para desplegar el cuadro completo en formato tabla organizado por vehículo/gastos:")
 
     col_btn1, col_btn2 = st.columns(2)
     
@@ -313,7 +319,7 @@ if not df.empty:
             st.info("No hay movimientos registrados para este mes.")
 
 else:
-    st.info("No hay registros todavía. Empieza agregando tus operaciones arriba.")
+    st.info("No hay registros todavía. Empieza agregando tus órdenes de autos y gastos arriba.")
 
 # --- SECCIÓN DE WHATSAPP ---
 st.write("---")
@@ -322,12 +328,12 @@ st.subheader("💬 Envío de Cierre a WhatsApp")
 df_hoy_wa = df[df['fecha'] == fecha_hoy] if not df.empty else pd.DataFrame()
 
 if not df_hoy_wa.empty:
-    f_ing_hoy = df_hoy_wa[df_hoy_wa['tipo'].str.contains("Ingresos")]['monto'].sum()
+    f_ing_hoy = df_hoy_wa[df_hoy_wa['tipo'].str.contains("Orden de Trabajo")]['monto'].sum()
     f_gas_hoy = df_hoy_wa[df_hoy_wa['tipo'].str.contains("Gastos|Materiales", regex=True)]['monto'].sum()
     
     msg = f"🚗 *REPORTE DIARIO - TALLER CÉSAR BETO*\n"
     msg += f"📅 *Fecha:* {fecha_hoy}\n\n"
-    msg += f"🟢 *Ingresos del día:* ${f_ing_hoy:.2f}\n"
+    msg += f"🟢 *Ingresos por Órdenes de Autos:* ${f_ing_hoy:.2f}\n"
     msg += f"🔴 *Gastos del día:* ${f_gas_hoy:.2f}\n"
     msg += f"💵 *Efectivo actual:* ${efectivo_actual:.2f}\n"
     msg += f"📱 *Digital actual:* ${digital_actual:.2f}\n"
@@ -335,7 +341,7 @@ if not df_hoy_wa.empty:
     msg += f"📋 *Detalle de operaciones:*\n"
     
     for index, row in df_hoy_wa.iterrows():
-        signo = "+" if "Ingresos" in row['tipo'] else "-"
+        signo = "+" if "Orden de Trabajo" in row['tipo'] else "-"
         medio_txt = "Efectivo" if "Efectivo" in row['medio'] else "Digital"
         msg += f"• {row['detalle']} ({medio_txt}): {signo}${row['monto']:.2f}\n"
     
@@ -348,4 +354,4 @@ if not df_hoy_wa.empty:
         </a>
     ''', unsafe_allow_html=True)
 else:
-    st.info("💡 Registra al menos un movimiento el día de hoy para habilitar el botón de envío automático a WhatsApp.")
+    st.info("💡 Registra al menos una orden o movimiento el día de hoy para habilitar el botón de envío automático a WhatsApp.")
