@@ -362,10 +362,7 @@ if not df_hoy_wa.empty:
         msg += "• " + str(row.get('detalle', '')) + " (" + medio_txt + "): " + signo + "$" + f"{float(row.get('monto', 0)):.2f}\n"
     
     mensaje_codificado = urllib.parse.quote(msg)
-    url_whatsapp = f"https://api.whatsapp.com/send?phone={telefono_destino}&text=" + mensaje_codificado
+    url_whatsapp = "https://api.whatsapp.com/send?phone=" + telefono_destino + "&text=" + mensaje_codificado
     
-    st.markdown(f'''
-        <a href="{url_whatsapp}" target="_blank" class="btn-whatsapp">
-            💬 Enviar Cierre de Hoy al WhatsApp seleccionado ({telefono_destino})
-        </a>
-    ''', un
+    btn_html = '<a href="' + url_whatsapp + '" target="_blank" class="btn-whatsapp">💬 Enviar Cierre de Hoy al WhatsApp seleccionado (' + telefono_destino + ')</a>'
+    st.markdown(btn_html, un
