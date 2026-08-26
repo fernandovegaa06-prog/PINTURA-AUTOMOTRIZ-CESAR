@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 import urllib.parse
 import os
 
@@ -9,69 +9,13 @@ st.set_page_config(page_title="Caja Taller Automotriz César Beto", page_icon="�
 
 RUTA_ARCHIVO = "taller_datos.xlsx"
 
-# --- GENERAR DATOS DE PRUEBA PARA UN MES COMPLETO ---
-def generar_datos_mes_completo():
-    datos = []
-    hoy = datetime.now()
-    
-    marcas = ["Toyota", "Hyundai", "Nissan", "Chevrolet", "Kia", "Suzuki", "Mazda", "Volkswagen", "Renault"]
-    trabajos = [
-        "Pintado Parachoques Delantero", "Pintado Parachoques Trasero", 
-        "Pintado de Puerta Delantera", "Pintado Guardafango", 
-        "Pintura Completa Auto", "Pulido y Lijado General", "Adelanto / Cuenta de Trabajo"
-    ]
-    materiales = ["Lijas de agua", "Pintura Poliuretano", "Laca Transparente", "Catalizador", "Masilla plástica", "Cinta masking tape"]
-    personales = ["Almuerzo", "Desayuno", "Agua / Gaseosa", "Pasajes / Movilidad", "Recarga de celular"]
-
-    for i in range(30):
-        dia_pasado = hoy - timedelta(days=i)
-        fecha_str = dia_pasado.strftime("%d/%m/%Y")
-        mes_anio_str = dia_pasado.strftime("%m/%Y")
-        
-        if i % 2 == 0:
-            marca = marcas[i % len(marcas)]
-            trabajo = trabajos[i % len(trabajos)]
-            monto_auto = float(120 + (i * 15) % 300)
-            medio = "Digital (Yape / Banco)" if i % 3 == 0 else "Efectivo"
-            datos.append({
-                "fecha": fecha_str,
-                "mes_anio": mes_anio_str,
-                "tipo": "🚙 Orden de Trabajo / Cobro por Auto (Ingreso)",
-                "detalle": f"Auto: {marca} | Placa/Ref: ABC-{100+i} | Trabajo: {trabajo}",
-                "medio": medio,
-                "monto": monto_auto
-            })
-            
-        if i % 3 == 0:
-            material = materiales[i % len(materiales)]
-            datos.append({
-                "fecha": fecha_str,
-                "mes_anio": mes_anio_str,
-                "tipo": "🔴 Gastos Materiales y Herramientas (Taller)",
-                "detalle": material,
-                "medio": "Efectivo",
-                "monto": float(30 + (i * 5) % 70)
-            })
-            
-        gasto_per = personales[i % len(personales)]
-        datos.append({
-            "fecha": fecha_str,
-            "mes_anio": mes_anio_str,
-            "tipo": "🟡 Gastos Personales",
-            "detalle": gasto_per,
-            "medio": "Efectivo",
-            "monto": float(15 + (i * 2) % 25)
-        })
-        
-    return datos
-
-# --- FUNCIONES DE CARGA Y GUARDADO EN EXCEL ---
+# --- FUNCIONES DE CARGA Y GUARDADO EN EXCEL (EN CEROS SI NO EXISTE) ---
 def cargar_datos_excel():
     if os.path.exists(RUTA_ARCHIVO):
         try:
             df_existente = pd.read_excel(RUTA_ARCHIVO)
             if df_existente.empty:
-                return generar_datos_mes_completo()
+                return []
             operaciones = []
             for _, row in df_existente.iterrows():
                 operaciones.append({
@@ -84,11 +28,9 @@ def cargar_datos_excel():
                 })
             return operaciones
         except Exception:
-            return generar_datos_mes_completo()
+            return []
     else:
-        datos_iniciales = generar_datos_mes_completo()
-        guardar_datos_excel(datos_iniciales)
-        return datos_iniciales
+        return []
 
 def guardar_datos_excel(lista_operaciones):
     try:
@@ -123,26 +65,26 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Inicializar Base de Datos
+# Inicializar Base de Datos en vacía (0 registros al iniciar)
 if 'operaciones' not in st.session_state:
     st.session_state.operaciones = cargar_datos_excel()
 
 if 'efectivo_base' not in st.session_state:
-    st.session_state.efectivo_base = 350.0
+    st.session_state.efectivo_base = 0.0
 
 if 'digital_base' not in st.session_state:
-    st.session_state.digital_base = 500.0
+    st.session_state.digital_base = 0.0
 
 # Banner visual
 st.markdown("""
     <div class="banner-taller">
         <h1 style="margin:0; font-size: 2rem; color: #ffffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">🚗 Taller de Pintura Automotriz César Beto</h1>
-        <p style="margin:5px 0 0 0; color: #e2e8f0; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Historial Completo de 30 Días</p>
+        <p style="margin:5px 0 0 0; color: #e2e8f0; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Control de Caja y Movimientos</p>
     </div>
 """, unsafe_allow_html=True)
 
 # Configuración Dinero Inicial
-with st.expander("⚙️ Configurar Dinero Inicial (Efectivo y Digital)"):
+with st.expander("⚙️ Configurar Dinero Inicial en Caja (Efectivo y Digital)"):
     col_eb, col_db = st.columns(2)
     with col_eb:
         nuevo_efectivo = st.number_input("Base en Efectivo ($ / S/):", value=st.session_state.efectivo_base, step=10.0)
@@ -348,7 +290,7 @@ if not df.empty:
             st.info("No hay movimientos este mes.")
 
 else:
-    st.info("No hay registros todavía.")
+    st.info("No hay registros todavía. Todo está en cero listo para empezar.")
 
 # Administrar registros
 st.write("---")
@@ -389,7 +331,6 @@ if not df_hoy_wa.empty:
     f_gastos_hoy = f_gt_hoy + f_gp_hoy
     f_ganancia_hoy = f_ing_hoy - f_gastos_hoy
     
-    # Construcción segura de la variable msg por concatenación (sin errores de f-string complejo)
     msg = "🔒 *CIERRE DE CAJA - TALLER CÉSAR BETO*\n"
     msg += "📅 Fecha: " + fecha_hoy + "\n\n"
     msg += "🟢 Total Ingresos (Autos): $" + f"{f_ing_hoy:.2f}\n"
